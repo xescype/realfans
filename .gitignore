@@ -1,0 +1,12 @@
+# kicad yerel dosyaları
+*.kicad_prl
+*-backups/
+.history/
+fp-info-cache
+*.bak
+*.lck
+_autosave-*
+~*
+
+# notlar
+chatlogs.md
