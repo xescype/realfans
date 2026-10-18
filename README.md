@@ -1,10 +1,9 @@
+<p align="center"><img src="assets/banner.svg" alt="realfans: yavaşça dönen tozlu mavi bir fan ve Latince söz, Natura non facit saltus" width="100%"></p>
+
 # realfans
 
 laptoplar için ince, kompakt ve ergonomik bir fan.
 piyasadaki laptop fanları yetersiz, iyisini yapan yok. bu repo o boşluğu doldurma denemesi.
-
-*Natura non facit saltus*
-Doğa sıçrama yapmaz.
 
 ## durum
 
