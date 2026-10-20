@@ -8,5 +8,15 @@ fp-info-cache
 _autosave-*
 ~*
 
+# freecad ve simülasyon geçici dosyaları
+*.FCBak
+*.FCStd1
+*.lock
+**/meshCase/
+*.foam
+*.vtk
+__pycache__/
+*.pyc
+
 # notlar
 chatlogs.md
