@@ -1,0 +1,279 @@
+# -*- coding: utf-8 -*-
+"""
+RealFans - Ince laptop sogutucu konsept modeli (v0.1)
+
+Kullanim (FreeCAD 1.x):
+    Macro > Macros... > bu dosyayi sec > Execute
+    (veya dosyayi FreeCAD'e surukle-birak, sonra Macro > Execute)
+
+Tum olculer mm. En ustteki PARAMETRELER bolumunu degistirip makroyu
+tekrar calistirirsan model bastan uretilir.
+
+Koordinatlar:
+    X = sol(-) / sag(+)   (0 = orta panelin ortasi)
+    Y = on(0)  / arka(+)  (kullaniciya bakan kenar Y=0)
+    Z = masa(0) / yukari(+)
+
+Bu bir KONSEPT YERLESIM modelidir: parcalarin nerede durdugunu ve
+olculerin birbirine sigip sigmadigini gostermek icin. Uretim (kalip,
+snap-fit, vida boss'lari, menteşe detayi) henuz yok.
+"""
+
+import os
+import FreeCAD as App
+import Part
+from FreeCAD import Vector as V
+
+# ============================================================
+# PARAMETRELER
+# ============================================================
+TOTAL_H    = 15.0    # ayak dahil toplam kalinlik
+FOOT_H     = 2.5     # kaucuk ayak yuksekligi (alttan hava emisi icin bosluk)
+WALL       = 1.2     # govde et kalinligi (ust/alt/yan)
+DEPTH      = 260.0   # on-arka derinlik
+CENTER_W   = 220.0   # orta panel genisligi
+WING_W     = 80.0    # her bir kanat genisligi
+HINGE_GAP  = 0.6     # orta panel - kanat arasi bosluk
+
+# Alt emis fanlari (orta panel) - 80x80x10 mm, 5V, PWM
+FAN_SIZE   = 80.0
+FAN_T      = 10.0
+FAN_X      = 50.0    # fan merkezleri X = +/-FAN_X
+FAN_Y      = 150.0   # fan merkezleri Y (laptop alt girislerine gore ayarla)
+GRILL_D    = 76.0    # ust/alt izgara acikligi
+
+# Yan destek blower'lari (kanatlar) - 40x40x10 mm radyal (4010 blower)
+SIDE_FAN   = 40.0
+SIDE_FAN_T = 10.0
+SIDE_FAN_Y = 170.0   # kizak merkezi (ray uzerinde kayar)
+RAIL_Y0    = 40.0    # ray baslangici
+RAIL_Y1    = 220.0   # ray bitisi
+OUTLET_W   = 20.0    # blower cikis agzi genisligi (Y)
+OUTLET_H   = 8.0     # blower cikis agzi yuksekligi (Z)
+
+# Temas plakasi (v2 deney) - aluminyum, ust yuzeyle ayni hizada
+PLATE_W    = 120.0
+PLATE_D    = 60.0
+PLATE_Y    = 75.0    # plaka merkezi Y
+
+# Elektronik
+PCB_W, PCB_D, PCB_T = 60.0, 40.0, 1.6
+USBC_W, USBC_D, USBC_H = 9.0, 7.5, 3.3
+
+# Referans laptop (Lenovo IdeaPad Gaming 3 15" yaklasik)
+LAPTOP_W, LAPTOP_D, LAPTOP_H = 360.0, 265.0, 24.0
+SHOW_LAPTOP = True
+
+# ============================================================
+# TURETILMIS OLCULER
+# ============================================================
+BODY_H  = TOTAL_H - FOOT_H          # govde yuksekligi
+Z0      = FOOT_H                    # govde alt yuzu
+Z_IN0   = Z0 + WALL                 # ic bosluk tabani
+Z_IN1   = Z0 + BODY_H - WALL        # ic bosluk tavani
+INNER_H = Z_IN1 - Z_IN0
+HALF_C  = CENTER_W / 2.0
+WING_X0 = HALF_C + HINGE_GAP        # sag kanat ic kenari
+WING_X1 = WING_X0 + WING_W          # sag kanat dis kenari
+OPEN_W  = 2 * WING_X1
+
+assert INNER_H >= FAN_T, "Ic bosluk (%.2f) fan kalinligindan (%.1f) kucuk!" % (INNER_H, FAN_T)
+assert INNER_H >= SIDE_FAN_T, "Ic bosluk blower icin yetersiz!"
+
+
+# ============================================================
+# YARDIMCI FONKSIYONLAR
+# ============================================================
+def box(x, y, z, w, d, h):
+    return Part.makeBox(w, d, h, V(x, y, z))
+
+
+def cyl_z(cx, cy, z, r, h):
+    return Part.makeCylinder(r, h, V(cx, cy, z), V(0, 0, 1))
+
+
+def cyl_y(cx, y, cz, r, length):
+    return Part.makeCylinder(r, length, V(cx, y, cz), V(0, 1, 0))
+
+
+def shell_box(x, y, w, d):
+    """Govde kabugu: dis kutu - ic kutu."""
+    outer = box(x, y, Z0, w, d, BODY_H)
+    inner = box(x + WALL, y + WALL, Z_IN0, w - 2 * WALL, d - 2 * WALL, INNER_H)
+    return outer.cut(inner)
+
+
+def grill_ribs(cx, cy, z, t):
+    """Izgara: capraz iki kol + ortada halka (dairesel aciklik icine)."""
+    r = GRILL_D / 2.0
+    ribs = box(cx - r, cy - 1.0, z, 2 * r, 2.0, t)
+    ribs = ribs.fuse(box(cx - 1.0, cy - r, z, 2.0, 2 * r, t))
+    ring = cyl_z(cx, cy, z, 21.0, t).cut(cyl_z(cx, cy, z, 19.0, t))
+    ring2 = cyl_z(cx, cy, z, 31.0, t).cut(cyl_z(cx, cy, z, 29.0, t))
+    hub = cyl_z(cx, cy, z, 10.0, t)
+    return ribs.fuse(ring).fuse(ring2).fuse(hub)
+
+
+def axial_fan(cx, cy):
+    """80x80x10 eksenel fan (basit temsil: cerceve + gobek + pervane disk)."""
+    z = Z_IN0
+    s = FAN_SIZE / 2.0
+    frame = box(cx - s, cy - s, z, FAN_SIZE, FAN_SIZE, FAN_T)
+    frame = frame.cut(cyl_z(cx, cy, z - 1, s - 2.5, FAN_T + 2))
+    hub = cyl_z(cx, cy, z + 1.0, 14.0, FAN_T - 2.0)
+    blades = cyl_z(cx, cy, z + 4.0, s - 4.0, 1.5).cut(cyl_z(cx, cy, z, 14.0, FAN_T))
+    return frame.fuse(hub).fuse(blades)
+
+
+def side_blower(side):
+    """4010 radyal blower; cikis agzi kanadin dis duvarina bakar. side=+1 sag, -1 sol."""
+    z = Z_IN0
+    outer_wall_in = WING_X1 - WALL           # dis duvarin ic yuzu (sag icin)
+    nub_len = 8.0                            # cikis agzi uzunlugu
+    body_x1 = outer_wall_in - nub_len
+    body_x0 = body_x1 - SIDE_FAN
+    y0 = SIDE_FAN_Y - SIDE_FAN / 2.0
+    body = box(body_x0, y0, z, SIDE_FAN, SIDE_FAN, SIDE_FAN_T)
+    nub = box(body_x1, SIDE_FAN_Y - OUTLET_W / 2.0, z + (SIDE_FAN_T - OUTLET_H) / 2.0,
+              nub_len, OUTLET_W, OUTLET_H)
+    shp = body.fuse(nub)
+    if side < 0:
+        shp = shp.mirror(V(0, 0, 0), V(1, 0, 0))
+    return shp
+
+
+# ============================================================
+# MODEL
+# ============================================================
+DOC_NAME = "RealFans_Pad_v01"
+if App.ActiveDocument and App.ActiveDocument.Name == DOC_NAME:
+    App.closeDocument(DOC_NAME)
+doc = App.newDocument(DOC_NAME)
+
+parts = {}   # isim -> (shape, renk, seffaflik, grup)
+
+# ---------------- Orta panel ----------------
+center = shell_box(-HALF_C, 0, CENTER_W, DEPTH)
+grills = []
+for sx in (-1, 1):
+    cx = sx * FAN_X
+    hole = cyl_z(cx, FAN_Y, Z0 - 1, GRILL_D / 2.0, BODY_H + 2)
+    center = center.cut(hole)
+    grills.append(grill_ribs(cx, FAN_Y, Z0 + BODY_H - WALL, WALL))   # ust izgara
+    grills.append(grill_ribs(cx, FAN_Y, Z0, WALL))                   # alt izgara
+for g in grills:
+    center = center.fuse(g)
+
+# Temas plakasi yuvasi (ust duvarda tam aciklik, plaka bunu doldurur)
+plate_x0 = -PLATE_W / 2.0
+plate_y0 = PLATE_Y - PLATE_D / 2.0
+center = center.cut(box(plate_x0, plate_y0, Z_IN1 - 0.01, PLATE_W, PLATE_D, WALL + 0.02))
+
+# USB-C acikligi (arka duvar, ortada)
+usbc_zc = Z_IN0 + PCB_T + USBC_H / 2.0
+center = center.cut(box(-(USBC_W + 0.4) / 2.0, DEPTH - WALL - 0.5, usbc_zc - (USBC_H + 0.4) / 2.0,
+                        USBC_W + 0.4, WALL + 1.0, USBC_H + 0.4))
+# Hiz butonu + 3 LED (ust yuzey, arka sag / arka sol)
+center = center.cut(cyl_z(85.0, DEPTH - 20.0, Z_IN1 - 0.5, 3.5, WALL + 1.0))
+for i, lx in enumerate((-90.0, -82.0, -74.0)):
+    center = center.cut(cyl_z(lx, DEPTH - 20.0, Z_IN1 - 0.5, 1.25, WALL + 1.0))
+parts["OrtaPanel"] = (center.removeSplitter(), (0.20, 0.22, 0.25), 0, "Govde")
+
+# ---------------- Kanatlar ----------------
+for side, name in ((1, "SagKanat"), (-1, "SolKanat")):
+    wing = shell_box(WING_X0, 0, WING_W, DEPTH)
+    sled_cx = WING_X1 - WALL - 8.0 - SIDE_FAN / 2.0
+    # Alt emis penceresi (ray boyunca) - kizak nerede olursa olsun hava alir
+    wing = wing.cut(box(sled_cx - 15.0, RAIL_Y0, Z0 - 0.5, 30.0, RAIL_Y1 - RAIL_Y0, WALL + 1.0))
+    # Dis duvarda uzun cikis yarigi - blower cikisi ray boyunca her yerde disari bakar
+    wing = wing.cut(box(WING_X1 - WALL - 0.5, RAIL_Y0, Z_IN0 + (SIDE_FAN_T - OUTLET_H) / 2.0,
+                        WALL + 1.0, RAIL_Y1 - RAIL_Y0, OUTLET_H))
+    # Ic ray (alt duvar ustunde). Dis kilavuz = dis duvardaki yarikta kayan blower cikis agzi.
+    wing = wing.fuse(box(sled_cx - SIDE_FAN / 2.0 - 3.0, RAIL_Y0, Z_IN0, 2.0, RAIL_Y1 - RAIL_Y0, 1.5))
+    if side < 0:
+        wing = wing.mirror(V(0, 0, 0), V(1, 0, 0))
+    parts[name] = (wing.removeSplitter(), (0.28, 0.30, 0.34), 0, "Govde")
+
+# ---------------- Mentese pimleri (kademeli/detent mentese yeri) ----------------
+hinge = None
+for side in (-1, 1):
+    hx = side * (HALF_C + HINGE_GAP / 2.0)
+    for y0 in (20.0, 110.0, 200.0):
+        k = cyl_y(hx, y0, Z0 + BODY_H / 2.0, 3.0, 40.0)
+        hinge = k if hinge is None else hinge.fuse(k)
+parts["Menteseler"] = (hinge, (0.75, 0.75, 0.78), 0, "Mekanizma")
+
+# ---------------- Ayaklar ----------------
+feet = None
+foot_pts = [(-HALF_C + 12, 12), (HALF_C - 12, 12), (-HALF_C + 12, DEPTH - 12), (HALF_C - 12, DEPTH - 12),
+            (-WING_X1 + 12, 12), (WING_X1 - 12, 12), (-WING_X1 + 12, DEPTH - 12), (WING_X1 - 12, DEPTH - 12)]
+for fx, fy in foot_pts:
+    f = cyl_z(fx, fy, 0, 5.0, FOOT_H)
+    feet = f if feet is None else feet.fuse(f)
+parts["Ayaklar"] = (feet, (0.05, 0.05, 0.05), 0, "Mekanizma")
+
+# ---------------- Fanlar ----------------
+parts["EmisFani_Sol"] = (axial_fan(-FAN_X, FAN_Y), (0.10, 0.45, 0.85), 0, "Fanlar")
+parts["EmisFani_Sag"] = (axial_fan(FAN_X, FAN_Y), (0.10, 0.45, 0.85), 0, "Fanlar")
+parts["YanBlower_Sag"] = (side_blower(1), (0.95, 0.55, 0.10), 0, "Fanlar")
+parts["YanBlower_Sol"] = (side_blower(-1), (0.95, 0.55, 0.10), 0, "Fanlar")
+
+# ---------------- Temas plakasi (v2) ----------------
+parts["TemasPlakasi_Al"] = (box(plate_x0, plate_y0, Z_IN1, PLATE_W, PLATE_D, WALL),
+                            (0.80, 0.82, 0.85), 0, "Termal_v2")
+
+# ---------------- Elektronik ----------------
+pcb_y0 = DEPTH - WALL - PCB_D - 1.0
+parts["PCB"] = (box(-PCB_W / 2.0, pcb_y0, Z_IN0, PCB_W, PCB_D, PCB_T), (0.05, 0.45, 0.15), 0, "Elektronik")
+parts["USB_C"] = (box(-USBC_W / 2.0, DEPTH - WALL - USBC_D, Z_IN0 + PCB_T, USBC_W, USBC_D, USBC_H),
+                  (0.70, 0.70, 0.72), 0, "Elektronik")
+
+# ---------------- Referans laptop ----------------
+if SHOW_LAPTOP:
+    parts["Laptop_Referans"] = (box(-LAPTOP_W / 2.0, (DEPTH - LAPTOP_D) / 2.0, TOTAL_H,
+                                    LAPTOP_W, LAPTOP_D, LAPTOP_H), (0.6, 0.6, 0.6), 85, "Referans")
+
+# ---------------- Belge nesneleri ----------------
+groups = {}
+objs = []
+for name, (shp, color, transp, grp) in parts.items():
+    if grp not in groups:
+        groups[grp] = doc.addObject("App::DocumentObjectGroup", grp)
+    o = doc.addObject("Part::Feature", name)
+    o.Shape = shp
+    groups[grp].addObject(o)
+    objs.append(o)
+    if App.GuiUp:
+        o.ViewObject.ShapeColor = color
+        o.ViewObject.Transparency = transp
+doc.recompute()
+
+# ---------------- Kontroller ----------------
+def clash(a, b):
+    return parts[a][0].common(parts[b][0]).Volume
+
+print("=== RealFans v0.1 ===")
+print("Acik genislik x derinlik x kalinlik: %.1f x %.1f x %.1f mm" % (OPEN_W, DEPTH, TOTAL_H))
+print("Govde ic boslugu: %.2f mm (fan %.1f mm)" % (INNER_H, FAN_T))
+for a, b in (("EmisFani_Sol", "OrtaPanel"), ("EmisFani_Sag", "OrtaPanel"),
+             ("YanBlower_Sag", "SagKanat"), ("YanBlower_Sol", "SolKanat"),
+             ("PCB", "OrtaPanel"), ("PCB", "EmisFani_Sol"), ("USB_C", "OrtaPanel")):
+    print("Cakisma %-14s <-> %-10s : %.3f mm3" % (a, b, clash(a, b)))
+
+# ---------------- Kaydet / disa aktar ----------------
+try:
+    out_dir = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    out_dir = App.getUserMacroDir(True)
+fcstd = os.path.join(out_dir, DOC_NAME + ".FCStd")
+step = os.path.join(out_dir, DOC_NAME + ".step")
+doc.saveAs(fcstd)
+import Import
+Import.export([o for o in objs if o.Name != "Laptop_Referans"], step)
+print("Kaydedildi:", fcstd)
+print("STEP     :", step)
+
+if App.GuiUp:
+    import FreeCADGui as Gui
+    Gui.activeDocument().activeView().viewIsometric()
+    Gui.SendMsgToActiveView("ViewFit")
