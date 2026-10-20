@@ -1,0 +1,265 @@
+# -*- coding: utf-8 -*-
+"""
+RealFans - Faz-0 Genis Test Tezgahi + 3B Hava Akis / Ejektor / Stator Modeli
+============================================================================
+Bu makro FreeCAD icinde:
+  1. Genis Faz-0 test tezgahini (veya 15 mm ince govdeyi)
+  2. M1: Ust cevrede sokulebilir KOPUK CONTA (kapali basinc odasi / plenum)
+  3. M2: YAN VENTURI / COANDA EJEKTOR AGZI (daralan yuksek hizli jet yarigi)
+  4. M3: ACILI STATOR KANATCIKLARI (fan cikisindaki donen havayi diklestirip basinca ceviren kanatlar)
+  5. M4: ALUMINYUM TEMAS PLAKASI
+  6. 3B HAVA AKIS OKLARI (Mavi: soguk emis, Camgobegi: ejektor jeti, Turuncu/Kirmizi: uzaklastirilan egzoz)
+olusturur ve kaydeder.
+"""
+
+import os
+import math
+import FreeCAD as App
+import Part
+from FreeCAD import Vector as V
+
+# ============================================================
+# PARAMETRELER
+# ============================================================
+TOTAL_H   = 28.0    # Faz-0 ferah prototip yuksekligi (ayak + govde + conta)
+FOOT_H    = 8.0     # Yuksek emis ayagi (alttan bol hava girisi icin)
+SEAL_H    = 3.0     # Ust kopuk conta yuksekligi (laptop altina basar)
+BODY_H    = TOTAL_H - FOOT_H - SEAL_H  # 17 mm ferah govde
+WALL      = 1.6
+DEPTH     = 260.0
+CENTER_W  = 220.0
+WING_W    = 80.0
+HINGE_GAP = 0.6
+
+FAN_SIZE  = 80.0
+FAN_T     = 10.0
+FAN_X     = 50.0
+FAN_Y     = 150.0
+GRILL_D   = 76.0
+
+SIDE_FAN   = 40.0
+SIDE_FAN_T = 10.0
+SIDE_FAN_Y = 160.0
+RAIL_Y0    = 40.0
+RAIL_Y1    = 220.0
+
+Z0        = FOOT_H
+Z_IN0     = Z0 + WALL
+Z_IN1     = Z0 + BODY_H - WALL
+INNER_H   = Z_IN1 - Z_IN0
+HALF_C    = CENTER_W / 2.0
+WING_X0   = HALF_C + HINGE_GAP
+WING_X1   = WING_X0 + WING_W
+
+LAPTOP_W, LAPTOP_D, LAPTOP_H = 360.0, 265.0, 24.0
+
+
+def box(x, y, z, w, d, h):
+    return Part.makeBox(w, d, h, V(x, y, z))
+
+
+def cyl_z(cx, cy, z, r, h):
+    return Part.makeCylinder(r, h, V(cx, cy, z), V(0, 0, 1))
+
+
+def stator_grill(cx, cy, z_base, h_vane=3.2, n_vanes=12):
+    """
+    M3 - YON VERICI STATOR KANATCIKLARI:
+    Fandan cikan donen (swirl) havayi yakalayip dik (+Z) yone ceviren
+    30 derece egimli radyal kanatciklar -> statik basinci ~%10-15 artirir.
+    """
+    r_in = 14.0
+    r_out = GRILL_D / 2.0 - 0.5
+    hub = cyl_z(cx, cy, z_base, r_in, h_vane)
+    ring = cyl_z(cx, cy, z_base, r_out + 1.0, h_vane).cut(cyl_z(cx, cy, z_base - 0.5, r_out, h_vane + 1.0))
+    shp = hub.fuse(ring)
+    vane_len = r_out - r_in + 1.0
+    for i in range(n_vanes):
+        ang = i * (360.0 / n_vanes)
+        # Kanatcik kutusu: kalinlik 1.2 mm, yukseklik h_vane, 28 derece yatay egim (stator acisi)
+        v = Part.makeBox(vane_len, 1.2, h_vane, V(r_in - 0.5, -0.6, 0))
+        v.rotate(V(r_in, 0, h_vane / 2.0), V(1, 0, 0), 28.0)
+        v.rotate(V(0, 0, 0), V(0, 0, 1), ang)
+        v.translate(V(cx, cy, z_base))
+        shp = shp.fuse(v)
+    return shp
+
+
+def venturi_ejector_blower(side):
+    """
+    M2 - YAN VENTURI / COANDA EJEKTOR MODULU:
+    4010 radyal blower + daralan/yukari kavisli Coanda yarik agzi.
+    Yuksek hizli ince jet (5-6 m/s) laptopun yan egzozunun hemen altindan firlar,
+    sicak egzoz havasini vakumlayip (entrainment) uzaga tasir.
+    """
+    z = Z_IN0
+    outer_x = WING_X1
+    nozzle_len = 14.0
+    body_x1 = outer_x - nozzle_len
+    body_x0 = body_x1 - SIDE_FAN
+    y0 = SIDE_FAN_Y - SIDE_FAN / 2.0
+
+    # Blower govdesi
+    body = box(body_x0, y0, z, SIDE_FAN, SIDE_FAN, SIDE_FAN_T)
+    body = body.fuse(cyl_z(body_x0 + SIDE_FAN / 2.0, SIDE_FAN_Y, z + SIDE_FAN_T, 14.0, 1.5))
+
+    # Daralan Venturi nozul (genislik 28 mm, yukseklik 10 mm -> cikista ince 3.2 mm jet yarigi + yukari egim)
+    noz_w = 28.0
+    ny0 = SIDE_FAN_Y - noz_w / 2.0
+    p1 = V(body_x1, ny0, z + 1.0)
+    p2 = V(outer_x + 3.0, ny0, z + 6.5)
+    p3 = V(outer_x + 3.0, ny0, z + 10.5)
+    p4 = V(body_x1, ny0, z + 9.5)
+    wire = Part.makePolygon([p1, p2, p3, p4, p1])
+    face = Part.Face(wire)
+    nozzle = face.extrude(V(0, noz_w, 0))
+
+    shp = body.fuse(nozzle)
+    if side < 0:
+        shp = shp.mirror(V(0, 0, 0), V(1, 0, 0))
+    return shp
+
+
+def arrow_3d(p_start, p_end, r_shaft=1.6, r_head=3.6, l_head=8.0):
+    """3B akis oku (silindir govde + koni baslik)."""
+    vec = p_end.sub(p_start)
+    length = vec.Length
+    if length <= l_head + 1.0:
+        return Part.makeCone(r_head, 0.1, length, p_start, vec)
+    dir_u = V(vec.x / length, vec.y / length, vec.z / length)
+    p_neck = p_start.add(V(dir_u.x * (length - l_head), dir_u.y * (length - l_head), dir_u.z * (length - l_head)))
+    shaft = Part.makeCylinder(r_shaft, length - l_head, p_start, dir_u)
+    head = Part.makeCone(r_head, 0.1, l_head, p_neck, dir_u)
+    return shaft.fuse(head)
+
+
+# ============================================================
+# BELGE OLUSTUR
+# ============================================================
+DOC_NAME = "RealFans_Proto0_Sim"
+if App.ActiveDocument and App.ActiveDocument.Name == DOC_NAME:
+    App.closeDocument(DOC_NAME)
+doc = App.newDocument(DOC_NAME)
+
+parts = {}
+
+# 1. Orta Panel
+outer_c = box(-HALF_C, 0, Z0, CENTER_W, DEPTH, BODY_H)
+inner_c = box(-HALF_C + WALL, WALL, Z_IN0, CENTER_W - 2 * WALL, DEPTH - 2 * WALL, INNER_H)
+center = outer_c.cut(inner_c)
+for sx in (-1, 1):
+    cx = sx * FAN_X
+    center = center.cut(cyl_z(cx, FAN_Y, Z0 - 1, GRILL_D / 2.0, BODY_H + 2))
+# Temas plakasi yuvasi
+center = center.cut(box(-60.0, 45.0, Z_IN1 - 0.1, 120.0, 60.0, WALL + 0.2))
+parts["OrtaPanel_Govde"] = (center, (0.20, 0.22, 0.26), 45, "1_Govde")
+
+# 2. M3 - Acili Stator Kanatciklari (ust izgarada)
+stators = stator_grill(-FAN_X, FAN_Y, Z_IN1 - 1.6, 3.2, 12).fuse(
+    stator_grill(FAN_X, FAN_Y, Z_IN1 - 1.6, 3.2, 12)
+)
+parts["M3_Stator_Kanatciklar"] = (stators, (0.25, 0.75, 0.95), 0, "2_Mekanizmalar")
+
+# 3. M1 - Ust Kopuk Conta (Plenum Sizdirmazlik Halkasi)
+seal_z = Z0 + BODY_H
+seal_outer = box(-HALF_C + 4.0, 12.0, seal_z, CENTER_W - 8.0, DEPTH - 24.0, SEAL_H)
+seal_inner = box(-HALF_C + 14.0, 22.0, seal_z - 0.5, CENTER_W - 28.0, DEPTH - 44.0, SEAL_H + 1.0)
+seal = seal_outer.cut(seal_inner)
+parts["M1_Plenum_Kopuk_Conta"] = (seal, (0.15, 0.85, 0.45), 15, "2_Mekanizmalar")
+
+# 4. Kanatlar
+for side, name in ((1, "SagKanat"), (-1, "SolKanat")):
+    w_out = box(WING_X0, 0, Z0, WING_W, DEPTH, BODY_H)
+    w_in = box(WING_X0 + WALL, WALL, Z_IN0, WING_W - 2 * WALL, DEPTH - 2 * WALL, INNER_H)
+    wing = w_out.cut(w_in)
+    sled_cx = WING_X1 - 14.0 - SIDE_FAN / 2.0
+    wing = wing.cut(box(sled_cx - 16.0, RAIL_Y0, Z0 - 0.5, 32.0, RAIL_Y1 - RAIL_Y0, WALL + 1.0))
+    wing = wing.cut(box(WING_X1 - WALL - 0.5, RAIL_Y0, Z_IN0 + 1.0, WALL + 1.0, RAIL_Y1 - RAIL_Y0, 11.0))
+    if side < 0:
+        wing = wing.mirror(V(0, 0, 0), V(1, 0, 0))
+    parts[name] = (wing, (0.28, 0.30, 0.35), 55, "1_Govde")
+
+# 5. Alt Emis Fanlari
+for sx, nm in ((-1, "AltFan_Sol"), (1, "AltFan_Sag")):
+    cx = sx * FAN_X
+    s = FAN_SIZE / 2.0
+    fr = box(cx - s, FAN_Y - s, Z_IN0, FAN_SIZE, FAN_SIZE, FAN_T).cut(cyl_z(cx, FAN_Y, Z_IN0 - 1, s - 3.0, FAN_T + 2))
+    hb = cyl_z(cx, FAN_Y, Z_IN0 + 1.0, 14.0, FAN_T - 2.0)
+    parts[nm] = (fr.fuse(hb), (0.12, 0.48, 0.88), 0, "2_Mekanizmalar")
+
+# 6. M2 - Yan Venturi / Coanda Ejektor Blower'lar
+parts["M2_YanEjektor_Sag"] = (venturi_ejector_blower(1), (0.98, 0.55, 0.12), 0, "2_Mekanizmalar")
+parts["M2_YanEjektor_Sol"] = (venturi_ejector_blower(-1), (0.98, 0.55, 0.12), 0, "2_Mekanizmalar")
+
+# 7. M4 - Aluminyum Temas Plakasi
+parts["M4_TemasPlakasi_Al"] = (box(-60.0, 45.0, Z_IN1, 120.0, 60.0, WALL + SEAL_H), (0.82, 0.85, 0.88), 0, "2_Mekanizmalar")
+
+# 8. Yuksek Emis Ayaklari
+feet = None
+for fx in (-WING_X1 + 14, -HALF_C + 14, HALF_C - 14, WING_X1 - 14):
+    for fy in (16.0, DEPTH - 16.0):
+        f = cyl_z(fx, fy, 0, 6.5, FOOT_H)
+        feet = f if feet is None else feet.fuse(f)
+parts["Ayaklar_8mm"] = (feet, (0.12, 0.12, 0.12), 0, "1_Govde")
+
+# 9. 3B HAVA AKIS GOSTERIMI (CFD Akis Yollari)
+cold_arrows = None
+for sx in (-1, 1):
+    cx = sx * FAN_X
+    # Alttan giris -> fana -> plenum odasina
+    for dy in (-35.0, 0.0, 35.0):
+        a1 = arrow_3d(V(cx, FAN_Y + dy + ( -45 if dy <= 0 else 45 ), 3.5), V(cx, FAN_Y + dy * 0.4, 6.5))
+        cold_arrows = a1 if cold_arrows is None else cold_arrows.fuse(a1)
+    for dx_a in (-18.0, 18.0):
+        a2 = arrow_3d(V(cx + dx_a, FAN_Y, Z_IN0 + 2.0), V(cx + dx_a * 0.7, FAN_Y, TOTAL_H + 6.0))
+        cold_arrows = cold_arrows.fuse(a2)
+parts["Akis_1_SogukEmis_Mavi"] = (cold_arrows, (0.15, 0.65, 1.00), 0, "3_CFD_Akis_Okları")
+
+ejector_arrows = None
+hot_arrows = None
+for side in (-1, 1):
+    # M2 Ejektor yuksek hizli ince jet (Camgobegi)
+    for dy in (-8.0, 8.0):
+        p0 = V(side * (WING_X1 + 2.0), SIDE_FAN_Y + dy, Z_IN0 + 8.5)
+        p1 = V(side * (WING_X1 + 65.0), SIDE_FAN_Y + dy, TOTAL_H + 10.0)
+        ej = arrow_3d(p0, p1, r_shaft=1.4, r_head=3.2, l_head=7.5)
+        ejector_arrows = ej if ejector_arrows is None else ejector_arrows.fuse(ej)
+    # Laptop yan egzozundan cikip ejektor tarafindan uzaga tasinan sicak hava (Kirmizi/Turuncu)
+    for dy in (-10.0, 10.0):
+        p0 = V(side * (LAPTOP_W / 2.0), SIDE_FAN_Y + dy, TOTAL_H + 12.0)
+        p1 = V(side * (WING_X1 + 78.0), SIDE_FAN_Y + dy, TOTAL_H + 22.0)
+        ht = arrow_3d(p0, p1, r_shaft=1.8, r_head=3.8, l_head=8.5)
+        hot_arrows = ht if hot_arrows is None else hot_arrows.fuse(ht)
+
+parts["Akis_2_YanEjektorJet_Camgobegi"] = (ejector_arrows, (0.00, 0.95, 0.90), 0, "3_CFD_Akis_Okları")
+parts["Akis_3_SicakEgzozAtimi_Kirmizi"] = (hot_arrows, (1.00, 0.30, 0.15), 0, "3_CFD_Akis_Okları")
+
+# 10. Referans Laptop (Yari saydam)
+parts["Laptop_Referans"] = (
+    box(-LAPTOP_W / 2.0, (DEPTH - LAPTOP_D) / 2.0, TOTAL_H, LAPTOP_W, LAPTOP_D, LAPTOP_H),
+    (0.65, 0.68, 0.72), 84, "4_Referans"
+)
+
+groups = {}
+for name, (shp, color, transp, grp) in parts.items():
+    if grp not in groups:
+        groups[grp] = doc.addObject("App::DocumentObjectGroup", grp)
+    o = doc.addObject("Part::Feature", name)
+    o.Shape = shp
+    groups[grp].addObject(o)
+    if App.GuiUp:
+        o.ViewObject.ShapeColor = color
+        o.ViewObject.Transparency = transp
+
+doc.recompute()
+
+out_dir = os.path.dirname(os.path.abspath(__file__))
+fcstd = os.path.join(out_dir, DOC_NAME + ".FCStd")
+doc.saveAs(fcstd)
+print("Kaydedildi:", fcstd)
+
+if App.GuiUp:
+    import FreeCADGui as Gui
+    v = Gui.activeDocument().activeView()
+    v.viewIsometric()
+    Gui.SendMsgToActiveView("ViewFit")
