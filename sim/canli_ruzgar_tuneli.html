@@ -2,113 +2,104 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>RealFans — Canlı CFD Simülatörü v2.1 (Gerçekçi Mühendislik Kalibrasyonu)</title>
+  <title>RealFans — Parametrik Kutu / Fan / Kanal Bölme Simülatörü</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
 </head>
-<body class="bg-transparent text-[var(--foreground)] antialiased p-3 select-none">
-  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm flex flex-col gap-2.5">
+<body class="bg-transparent text-[var(--foreground)] antialiased p-2.5 select-none">
+  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-xl p-3 shadow-sm flex flex-col gap-2">
     
     <!-- Üst Başlık + Canlı Metrikler -->
     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-2">
       <div class="flex items-center gap-2">
         <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <h2 class="font-semibold text-sm sm:text-base">RealFans Canlı Simülatör <span class="text-xs font-normal text-cyan-400">(v2.1 Dürüst Mühendislik & Datasheet)</span></h2>
+        <h2 class="font-semibold text-sm">RealFans Parametrik Laboratuvar <span class="text-xs font-normal text-cyan-400">(Fan × Kutu Bölme × Egzoz Bölme)</span></h2>
         <div class="flex rounded-lg border border-[var(--border)] overflow-hidden text-xs ml-1">
-          <button id="btnMode2D" class="px-2 py-1 font-medium bg-cyan-500/20 text-cyan-400">2B Rüzgar Tüneli</button>
-          <button id="btnMode3D" class="px-2 py-1 font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">3B CAD Model</button>
+          <button id="btnMode2D" class="px-2 py-1 font-medium bg-cyan-500/20 text-cyan-400">2B Kesit Akışı</button>
+          <button id="btnMode3D" class="px-2 py-1 font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">3B Kutu & Fan Dizilimi</button>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-1.5 text-xs">
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
-          <span class="text-[var(--muted-foreground)]">Giriş Havası:</span>
-          <span id="kpiInlet" class="font-bold text-sky-400 ml-1">25.3 °C</span>
-        </div>
-        <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
-          <span class="text-[var(--muted-foreground)]">Oda Basıncı:</span>
-          <span id="kpiPress" class="font-bold text-purple-400 ml-1">102 Pa</span>
-        </div>
-        <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
           <span class="text-[var(--muted-foreground)]">Debi:</span>
-          <span id="kpiFlow" class="font-bold text-cyan-400 ml-1">4.69 L/s</span>
+          <span id="kpiFlow" class="font-bold text-cyan-400 ml-1">6.63 L/s</span>
+        </div>
+        <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
+          <span class="text-[var(--muted-foreground)]">Ef. Basınç:</span>
+          <span id="kpiPress" class="font-bold text-purple-400 ml-1">206 Pa</span>
+        </div>
+        <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
+          <span class="text-[var(--muted-foreground)]">Geri-Dönüş:</span>
+          <span id="kpiRecirc" class="font-bold text-sky-400 ml-1">%1.2</span>
         </div>
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
           <span class="text-[var(--muted-foreground)]">Ses / Güç:</span>
-          <span id="kpiNoisePower" class="font-bold text-slate-300 ml-1">45.8 dBA • 15.2 W</span>
+          <span id="kpiNoisePower" class="font-bold text-slate-300 ml-1">47.5 dBA • 19.0 W</span>
         </div>
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
           <span class="text-[var(--muted-foreground)]">T_CPU:</span>
-          <span id="kpiCpu" class="font-bold text-emerald-400 ml-1">74.1 °C</span>
-          <span id="kpiGain" class="font-semibold text-emerald-400 ml-1">(-16.5°C)</span>
+          <span id="kpiCpu" class="font-bold text-emerald-400 ml-1">70.5 °C</span>
+          <span id="kpiGain" class="font-semibold text-emerald-400 ml-1">(-21.5°C)</span>
         </div>
       </div>
     </div>
 
-    <!-- Hazır Senaryolar -->
+    <!-- Hazır Konfigürasyon Kısayolları -->
     <div class="flex flex-wrap items-center gap-1 text-xs">
-      <button data-preset="A" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">A) Düz Masa (90.6°C)</button>
-      <button data-preset="B" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">B) Sadece Stand (-4.2°C)</button>
-      <button data-preset="C" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">C) Klasik 8010 Pad (-5.8°C)</button>
-      <button data-preset="D" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">D) RealFans 5V (-12.2°C)</button>
-      <button data-preset="E" class="preset-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium">E) RealFans 12V PD + Conta + Arka Baraj (-16.5°C)</button>
-      <button id="btnSmokeBurst" class="ml-auto px-2 py-1 rounded border border-amber-400/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20">💨 Tütsü Bas</button>
+      <button data-preset="BASE" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">1) Mevcut v2.1: 4×5015 Tek Havuz (-16.5°C)</button>
+      <button data-preset="SLIM8" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">2) Ultra İnce: 8×4010 + 3 Bölme + 4 Egzoz (-17.6°C)</button>
+      <button data-preset="SIX50" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">3) 6×5015 + 3 Bölme + 4 Egzoz (-20.8°C)</button>
+      <button data-preset="SWEET60" class="preset-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium">4) SWEET SPOT: 4×6015 + 3 Bölme + 4 Egzoz (-21.5°C)</button>
+      <button data-preset="MAX75" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">5) Maks: 4×7515 + 3 Bölme + 4 Egzoz (-22.9°C)</button>
+      <button id="btnSmokeBurst" class="ml-auto px-2 py-1 rounded border border-amber-400/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20">💨 Tütsü</button>
     </div>
 
     <!-- Canlı Kanvas -->
     <div class="relative rounded-lg overflow-hidden border border-[var(--border)] bg-[#0d1117]">
-      <canvas id="simCanvas" width="880" height="245" class="w-full h-[245px] block cursor-crosshair"></canvas>
-      <div id="canvasHint" class="absolute bottom-1.5 left-3 text-xs text-slate-400 pointer-events-none">
-        <b>Gerçekçi Fizik Notu:</b> Silikon→Bakır sabit iletim direnci (0.195 K/W) dahildir. Dikdörtgen EPDM conta + Arka menteşe barajı aktif.
+      <canvas id="simCanvas" width="880" height="230" class="w-full h-[230px] block cursor-crosshair"></canvas>
+      <div id="canvasHint" class="absolute bottom-1.5 left-3 text-xs text-slate-300 pointer-events-none">
+        <b>3 Bölmeli Giriş + 4 Kanallı Egzoz:</b> Sol(CPU) + Sağ(GPU) + Orta(VRM/Isı Borusu Jeti, -8.5W parazitik yük) ve 4 yönlü egzoz tahliyesi.
       </div>
     </div>
 
-    <!-- Canlı Kontroller -->
+    <!-- Parametrik Kutu / Fan / Kanal Kontrolleri -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
-        <span class="text-[var(--muted-foreground)]">Ana Fan / Blower (Datasheet)</span>
-        <select id="selFanType" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
-          <option value="blower_12v" selected>4x 5015 12V PD Blower (265 Pa)</option>
-          <option value="blower_5v">2x 7510 5V Blower (98 Pa)</option>
-          <option value="axial_8010">2x 8010 5V Eksenel (14.7 Pa)</option>
+        <span class="text-[var(--muted-foreground)] font-medium">1. Fan Boyutu (Model)</span>
+        <select id="selFanSize" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
+          <option value="4010">40×40×10 mm (140 Pa • 13mm Gövde)</option>
+          <option value="5015">50×50×15 mm (265 Pa • 18mm Gövde)</option>
+          <option value="6015" selected>60×60×15 mm (315 Pa • 18mm Gövde)</option>
+          <option value="7515">75×75×15 mm (360 Pa • 19mm Gövde)</option>
         </select>
       </div>
 
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
-        <div class="flex justify-between">
-          <span class="text-[var(--muted-foreground)]">Ana Fan Hızı (PWM)</span>
-          <span id="valFan" class="font-semibold text-cyan-400">100%</span>
-        </div>
-        <input id="slFan" type="range" min="0" max="100" value="100" class="accent-cyan-400 cursor-pointer" />
+        <span class="text-[var(--muted-foreground)] font-medium">2. Ana Fan Adedi</span>
+        <select id="selFanCount" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
+          <option value="2">2 Adet Blower</option>
+          <option value="4" selected>4 Adet Blower</option>
+          <option value="6">6 Adet Blower</option>
+          <option value="8">8 Adet Blower</option>
+        </select>
       </div>
 
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
-        <div class="flex justify-between">
-          <span class="text-[var(--muted-foreground)]">Ayak Yüksekliği</span>
-          <span id="valGap" class="font-semibold text-cyan-400">17.0 mm</span>
-        </div>
-        <input id="slGap" type="range" min="2.5" max="22" step="0.5" value="17" class="accent-cyan-400 cursor-pointer" />
+        <span class="text-[var(--muted-foreground)] font-medium">3. Giriş Havasını Bölme (Kutu)</span>
+        <select id="selIntakeZones" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
+          <option value="1">1 Bölme: Tek Havuz (%74 Verim)</option>
+          <option value="2">2 Bölme: Sol CPU + Sağ GPU (%84)</option>
+          <option value="3" selected>3 Bölme: CPU + GPU + Orta VRM Jeti (%91)</option>
+        </select>
       </div>
 
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
-        <div class="flex justify-between">
-          <span class="text-[var(--muted-foreground)]">4010 Yan Ejektör (140 Pa)</span>
-          <span id="valEjec" class="font-semibold text-amber-400">100% (7.8 m/s)</span>
-        </div>
-        <input id="slEjec" type="range" min="0" max="100" value="100" class="accent-amber-400 cursor-pointer" />
-      </div>
-    </div>
-
-    <!-- Mekanizma Anahtarları -->
-    <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
-      <div class="flex flex-wrap items-center gap-4">
-        <label class="flex items-center gap-1.5 cursor-pointer">
-          <input id="chkSeal" type="checkbox" checked class="accent-emerald-400 w-3.5 h-3.5" />
-          <span><b>M1:</b> Evrensel Dikdörtgen EPDM Conta (Yatay Izgara Uyumlu)</span>
-        </label>
-        <label class="flex items-center gap-1.5 cursor-pointer">
-          <input id="chkHingeDam" type="checkbox" checked class="accent-cyan-400 w-3.5 h-3.5" />
-          <span><b>M2:</b> Arka Menteşe Altı Sıcak Hava Barajı (Geri-Dönüş %28 → %3)</span>
-        </label>
+        <span class="text-[var(--muted-foreground)] font-medium">4. Çıkış Havasını Bölme (Egzoz)</span>
+        <select id="selExhaustPorts" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
+          <option value="0">0 Kanal: Doğal Çıkış (+12 Pa Sıkışma)</option>
+          <option value="2">2 Kanal: Sağ + Sol Yan Ejektör (0 Pa)</option>
+          <option value="4" selected>4 Kanal: 2 Yan + 2 Arka-Köşe (-12 Pa)</option>
+        </select>
       </div>
     </div>
 
@@ -118,131 +109,94 @@
     const canvas = document.getElementById('simCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Sabit silikon -> macun -> bakır ısı borusu iç iletim direnci (0.195 K/W)
     const R_DIE_TO_FIN = 0.195;
     const R_CONV_REF = 0.252;
     const Q_REF = 0.00294;
 
+    const FAN_DB = {
+      '4010': { d: 40, h: 10, P: 140.5, Q: 1.42, noise: 34.5, power: 0.95 },
+      '5015': { d: 50, h: 15, P: 265.0, Q: 2.55, noise: 39.2, power: 3.10 },
+      '6015': { d: 60, h: 15, P: 315.0, Q: 3.75, noise: 41.0, power: 4.20 },
+      '7515': { d: 75, h: 15, P: 360.0, Q: 5.20, noise: 43.2, power: 5.80 }
+    };
+
     const state = {
       mode: '2D',
-      fanType: 'blower_12v', // 'axial_8010', 'blower_5v', 'blower_12v'
-      fanPct: 100,
-      gapMm: 17.0,
-      ejecPct: 100,
-      seal: true,
-      hingeDam: true,
-      // Çıktılar
-      Q_Ls: 4.69,
-      dP_Pa: 102.0,
-      recircPct: 3.0,
-      T_inlet: 25.3,
-      T_exh: 49.6,
-      T_cpu: 74.1,
-      noiseDba: 45.8,
-      powerW: 15.2,
-      rotZ: -0.65,
-      rotX: 0.55,
+      fanSize: '6015',
+      fanCount: 4,
+      intakeZones: 3,
+      exhaustPorts: 4,
+      Q_Ls: 6.63,
+      dP_Pa: 206,
+      recircPct: 1.2,
+      T_inlet: 25.1,
+      T_exh: 41.2,
+      T_cpu: 70.5,
+      noiseDba: 47.5,
+      powerW: 19.0,
+      rotZ: -0.62,
+      rotX: 0.58,
       lastX: 0,
-      lastY: 0,
-      fanPhase: 0
+      lastY: 0
     };
 
     function updatePhysics() {
-      const fanFrac = state.fanPct / 100.0;
-      const ejecFrac = state.ejecPct / 100.0;
+      const f = FAN_DB[state.fanSize];
+      const n = state.fanCount;
+      const P_max = f.P;
+      const Q_max = (f.Q * n) / 1000.0;
 
-      const R_laptop_int = 4.65e6;
-      const t = Math.max(0, Math.min(1, (state.gapMm - 2.5) / 12.5));
-      const R_gap = 2.05e6 * Math.pow(1 - t, 2.2) + 0.18e6;
-
-      let P_pad_max = 0, Q_pad_max = 0.001, leakFactor = 0, baseNoise = 0, basePower = 0;
-
-      if (fanFrac > 0.01) {
-        if (state.fanType === 'axial_8010') {
-          P_pad_max = 14.7 * Math.pow(fanFrac, 1.7);
-          Q_pad_max = 0.017 * fanFrac;
-          leakFactor = state.seal ? 0.12 : 0.58;
-          baseNoise = 34 + 9.2 * fanFrac;
-          basePower = 2.2 * Math.pow(fanFrac, 2.3);
-        } else if (state.fanType === 'blower_5v') {
-          P_pad_max = 98.0 * Math.pow(fanFrac, 1.7);
-          Q_pad_max = 0.0085 * fanFrac;
-          leakFactor = state.seal ? 0.08 : 0.42;
-          baseNoise = 32 + 9.0 * fanFrac;
-          basePower = 4.8 * Math.pow(fanFrac, 2.3);
-        } else {
-          // 4x 5015 12V USB-C PD Blower (265 Pa net statik basınç)
-          P_pad_max = 265.0 * Math.pow(fanFrac, 1.75);
-          Q_pad_max = 0.0102 * fanFrac;
-          leakFactor = state.seal ? 0.06 : 0.38;
-          baseNoise = 34 + 11.2 * fanFrac;
-          basePower = 13.8 * Math.pow(fanFrac, 2.3);
-        }
+      let coupling = 0.74, leak = 0.08, q_bypass = 0.0;
+      if (state.intakeZones === 2) {
+        coupling = 0.84; leak = 0.055; q_bypass = 4.0;
+      } else if (state.intakeZones === 3) {
+        coupling = 0.91; leak = 0.04; q_bypass = 8.5;
       }
 
-      const coupling = state.seal ? 0.80 : 0.36;
+      let p_back = 12.0, alpha_rec = 0.065, ejecPower = 0.0, ejecNoise = 0.0;
+      if (state.exhaustPorts === 2) {
+        p_back = 0.0; alpha_rec = 0.030; ejecPower = 1.4; ejecNoise = 36.0;
+      } else if (state.exhaustPorts === 4) {
+        p_back = -12.0; alpha_rec = 0.012; ejecPower = 2.2; ejecNoise = 37.8;
+      }
 
-      let bestQ = 0.00294;
-      let minDiff = 1e9;
-      let bestPadP = 0;
+      const R_laptop_int = 4.65e6;
+      const R_inlet = 0.18e6 * (state.intakeZones >= 2 ? 0.18 : 0.25);
 
-      for (let i = 0; i < 400; i++) {
-        const q = 0.0010 + (0.0110 * i) / 399.0;
+      let bestQ = 0.0040, minDiff = 1e9, bestEffP = 0;
+      for (let i = 0; i < 500; i++) {
+        const q = 0.0015 + (0.0125 * i) / 499.0;
         const p_lap = Math.max(0, 85.0 * (1.0 - Math.pow(q / 0.0058, 1.6)));
-        let p_pad = 0;
-        if (fanFrac > 0.01) {
-          const q_pad_eff = q / (1.0 - leakFactor);
-          p_pad = coupling * Math.max(0, P_pad_max * (1.0 - Math.pow(q_pad_eff / Math.max(0.0005, Q_pad_max), 1.45)));
-        }
-        const p_sup = p_lap + p_pad;
-        const r_in = R_gap * ((fanFrac > 0.05 && state.seal) ? 0.22 : 1.0);
-        const p_dem = (R_laptop_int + r_in) * q * q;
+        const q_pad_eff = q / (1.0 - leak);
+        const p_pad = coupling * Math.max(0, P_max * (1.0 - Math.pow(q_pad_eff / Math.max(0.0005, Q_max), 1.45)));
+        const p_sup = p_lap + p_pad - p_back;
+        const p_dem = (R_laptop_int + R_inlet) * q * q;
         const diff = Math.abs(p_sup - p_dem);
         if (diff < minDiff) {
           minDiff = diff;
           bestQ = q;
-          bestPadP = p_pad;
+          bestEffP = p_pad - p_back;
         }
       }
 
-      // Geri-dönüş (Recirculation)
-      let alpha_rec = 0.185 + 0.095 * Math.pow(1 - t, 1.6);
-      if (state.seal) {
-        alpha_rec *= 0.42;
-      } else if (fanFrac > 0.05) {
-        alpha_rec *= (1.0 - 0.14 * fanFrac);
-      }
-      if (state.hingeDam) {
-        alpha_rec *= 0.62;
-      }
-      alpha_rec *= (1.0 - 0.42 * ejecFrac);
-      alpha_rec = Math.max(0.030, Math.min(0.280, alpha_rec));
+      const flowFactor = Math.min(1.15, bestQ / 0.0050);
+      const Q_fin_load = 135.0 - q_bypass * flowFactor;
 
-      const dT_air = 135.0 / (1.18 * 1005.0 * bestQ);
+      const dT_air = Q_fin_load / (1.18 * 1005.0 * bestQ);
       const T_inlet = 25.0 + (alpha_rec / (1.0 - alpha_rec)) * dT_air * 0.42;
       const T_exh = Math.min(82.0, T_inlet + dT_air);
 
-      // İki kademeli gerçekçi termal direnç (Silikon->Isı Borusu sabit + Kanatçık->Hava değişken)
       const r_conv = R_CONV_REF * Math.pow(Q_REF / bestQ, 0.62);
-      const r_th_total = R_DIE_TO_FIN + r_conv;
-      const T_cpu = T_inlet + 135.0 * r_th_total;
+      const T_cpu = T_inlet + 135.0 * R_DIE_TO_FIN + Q_fin_load * r_conv;
 
-      const ejecPower = 1.4 * Math.pow(ejecFrac, 2.3);
-      const ejecNoise = ejecFrac > 0.05 ? (28 + 9.0 * ejecFrac) : 0;
-      const totalPower = basePower + ejecPower;
-      let totalNoise = 45.0;
-      if (fanFrac <= 0.01 && ejecFrac <= 0.01) {
-        totalNoise = state.gapMm <= 3.5 ? 46.0 : 45.0;
-      } else {
-        totalNoise = 10 * Math.log10(
-          (baseNoise > 0 ? Math.pow(10, baseNoise / 10) : 0) +
-          (ejecNoise > 0 ? Math.pow(10, ejecNoise / 10) : 0) +
-          Math.pow(10, 38.0 / 10)
-        );
-      }
+      const mainNoise = f.noise + 10.0 * Math.log10(n);
+      const totalNoise = 10.0 * Math.log10(
+        Math.pow(10.0, mainNoise / 10.0) + (ejecNoise > 0 ? Math.pow(10.0, ejecNoise / 10.0) : 0)
+      );
+      const totalPower = f.power * n + ejecPower;
 
       state.Q_Ls = bestQ * 1000.0;
-      state.dP_Pa = bestPadP;
+      state.dP_Pa = bestEffP;
       state.recircPct = alpha_rec * 100.0;
       state.T_inlet = T_inlet;
       state.T_exh = T_exh;
@@ -250,110 +204,108 @@
       state.noiseDba = totalNoise;
       state.powerW = totalPower;
 
-      document.getElementById('kpiInlet').textContent = state.T_inlet.toFixed(1) + ' °C';
       document.getElementById('kpiFlow').textContent = state.Q_Ls.toFixed(2) + ' L/s';
       document.getElementById('kpiPress').textContent = state.dP_Pa.toFixed(0) + ' Pa';
+      document.getElementById('kpiRecirc').textContent = '%' + state.recircPct.toFixed(1);
       document.getElementById('kpiNoisePower').textContent = `${state.noiseDba.toFixed(1)} dBA • ${state.powerW.toFixed(1)} W`;
       document.getElementById('kpiCpu').textContent = state.T_cpu.toFixed(1) + ' °C';
-      const gain = 90.6 - state.T_cpu;
-      const gainEl = document.getElementById('kpiGain');
-      gainEl.textContent = (gain >= 0 ? '(-' : '(+') + Math.abs(gain).toFixed(1) + '°C)';
-      gainEl.className = gain >= 15 ? 'font-bold text-emerald-400 ml-1' : (gain >= 10 ? 'font-semibold text-cyan-400 ml-1' : 'font-semibold text-amber-400 ml-1');
+      const gain = 92.0 - state.T_cpu;
+      document.getElementById('kpiGain').textContent = `(-${gain.toFixed(1)}°C)`;
     }
 
     function mmToPx(xMm, zMm) {
-      return [40 + (xMm / 320.0) * 800.0, 225 - (zMm / 95.0) * 205.0];
+      return [40 + (xMm / 320.0) * 800.0, 212 - (zMm / 95.0) * 195.0];
     }
     function pxToMm(px, py) {
-      return [((px - 40) / 800.0) * 320.0, ((225 - py) / 205.0) * 95.0];
+      return [((px - 40) / 800.0) * 320.0, ((212 - py) / 195.0) * 95.0];
     }
 
     const particles2D = [];
-    const N_PARTICLES = 440;
+    for (let i = 0; i < 440; i++) {
+      particles2D.push({ x: Math.random() * 300, z: 5 + Math.random() * 50, age: Math.random() * 140, maxAge: 160, temp: 25, smoke: false });
+    }
 
     function spawnParticle(p, isSmoke = false, customX = null, customZ = null) {
-      const zBot = Math.max(state.gapMm, 6.0);
+      const zBot = 17.0;
       p.smoke = isSmoke;
       p.age = 0;
-      p.maxAge = isSmoke ? 220 + Math.random() * 120 : 140 + Math.random() * 100;
+      p.maxAge = isSmoke ? 220 + Math.random() * 100 : 130 + Math.random() * 90;
       if (customX !== null) {
-        p.x = customX;
-        p.z = customZ;
+        p.x = customX; p.z = customZ;
         p.temp = p.x > 175 && p.z > zBot ? state.T_exh : 25.0;
         return;
       }
       const r = Math.random();
-      if (r < 0.45) {
+      if (r < 0.50) {
         p.x = 185 + Math.random() * 90;
-        p.z = 1.5 + Math.random() * Math.max(zBot - 2, 4);
+        p.z = 2 + Math.random() * 13;
         p.temp = 25.0;
-      } else if (r < 0.80) {
+      } else if (r < 0.82) {
         p.x = 180 + Math.random() * 4;
-        p.z = zBot + 7 + Math.random() * 11;
+        p.z = zBot + 6 + Math.random() * 12;
         p.temp = state.T_exh;
       } else {
-        p.x = 178 + Math.random() * 5;
-        p.z = Math.max(2, zBot - 2.5 + Math.random() * 3.5);
+        p.x = 176 + Math.random() * 5;
+        p.z = zBot - 2 + Math.random() * 4;
         p.temp = 25.0;
       }
-    }
-
-    for (let i = 0; i < N_PARTICLES; i++) {
-      const p = {};
-      spawnParticle(p);
-      p.age = Math.random() * p.maxAge;
-      particles2D.push(p);
     }
 
     function velocity2D(xMm, zMm) {
-      const zBot = Math.max(state.gapMm, 6.0);
-      const zTop = zBot + 24.0;
-      const fanFrac = state.fanPct / 100.0;
-      const ejecFrac = state.ejecPct / 100.0;
+      const zBot = 17.0, zTop = 41.0;
+      const flowScale = state.Q_Ls / 5.0;
 
       if (xMm <= 180 && zMm >= zBot && zMm <= zTop) {
-        return [1.6 + 1.7 * (state.Q_Ls / 4.5), 0.15 * ((zBot + 13 - zMm) / 12.0)];
+        return [1.8 + 1.8 * flowScale, 0.15 * ((zBot + 12 - zMm) / 12.0)];
       }
 
       let u = 0, w = 0;
-
       if (zMm < zBot && xMm <= 210) {
-        const vUnder = 1.1 + 2.1 * (state.Q_Ls / 4.5);
-        u -= vUnder * Math.min(1.0, xMm / 45.0);
-        const distIntake = Math.abs(xMm - 55.0);
-        if (distIntake < 32.0) {
-          w += vUnder * 1.05 * Math.exp(-Math.pow(distIntake / 24.0, 2));
+        const vUnder = 1.3 + 2.2 * flowScale;
+        u -= vUnder * Math.min(1.0, xMm / 35.0);
+        // 1, 2 veya 3 Bölgeli Giriş Jetleri
+        const dMain = Math.abs(xMm - 68.0);
+        if (dMain < 28.0) {
+          w += vUnder * 1.15 * Math.exp(-Math.pow(dMain / 18.0, 2));
         }
-        if (fanFrac > 0.05 && !state.seal && xMm > 110 && zMm > zBot * 0.40) {
-          const leakMul = state.fanType === 'axial_8010' ? 3.1 : 2.1;
-          u += leakMul * fanFrac;
+        if (state.intakeZones === 3 && xMm < 28.0) {
+          // Orta VRM / Isı Borusu Sırtı Yıkama Jeti (X = 0..24 mm)
+          w += vUnder * 1.25 * Math.exp(-Math.pow(xMm / 16.0, 2));
         }
       }
 
       if (xMm >= 178) {
         const dx = Math.max(1.0, xMm - 180.0);
         const zExh = zBot + 13.0;
-        const spread = 6.5 + 0.13 * dx;
-        const vExh = 1.5 + 1.4 * (state.Q_Ls / 4.5);
-        u += vExh * Math.exp(-Math.pow((zMm - zExh) / spread, 2)) * Math.exp(-dx / 150.0);
+        const spread = (state.exhaustPorts === 4 ? 9.5 : 6.5) + 0.14 * dx;
+        const vExh = 1.6 + 1.5 * flowScale;
+        u += vExh * Math.exp(-Math.pow((zMm - zExh) / spread, 2)) * Math.exp(-dx / 170.0);
       }
 
-      if (ejecFrac > 0.02 && xMm >= 176) {
-        const dx = Math.max(1.0, xMm - 178.0);
-        const rad = (22.0 * Math.PI) / 180.0;
-        const zCenter = Math.max(3.0, zBot - 2.0) + Math.tan(rad) * dx * 0.55;
-        const spread = 4.0 + 0.09 * dx;
-        const vEj = 5.5 * ejecFrac * Math.exp(-Math.pow((zMm - zCenter) / spread, 2)) * Math.exp(-dx / 220.0);
-        u += vEj * Math.cos(rad);
-        w += vEj * Math.sin(rad);
+      if (state.exhaustPorts >= 2 && xMm >= 175) {
+        const dx = Math.max(1.0, xMm - 177.0);
+        // Alt Yan Venturi + (4 Kanalda) Üst-Köşe Menteşe Tahliye Koridoru
+        const rad1 = (18.0 * Math.PI) / 180.0;
+        const zC1 = zBot - 1.5 + Math.tan(rad1) * dx * 0.55;
+        const vEj1 = 5.6 * Math.exp(-Math.pow((zMm - zC1) / (4.0 + 0.09 * dx), 2)) * Math.exp(-dx / 230.0);
+        u += vEj1 * Math.cos(rad1);
+        w += vEj1 * Math.sin(rad1);
+
+        if (state.exhaustPorts === 4) {
+          const rad2 = (32.0 * Math.PI) / 180.0;
+          const zC2 = zBot + 16.0 + Math.tan(rad2) * dx * 0.55;
+          const vEj2 = 4.8 * Math.exp(-Math.pow((zMm - zC2) / (4.5 + 0.10 * dx), 2)) * Math.exp(-dx / 220.0);
+          u += vEj2 * Math.cos(rad2);
+          w += vEj2 * Math.sin(rad2);
+        }
       }
 
-      const recircStr = (state.recircPct / 28.0) * 2.4;
-      if (recircStr > 0.10 && xMm > 155 && xMm < 255 && zMm < zTop + 10) {
-        const xc = 196.0, zc = zBot * 0.85;
-        const rx = (xMm - xc) / 34.0, rz = (zMm - zc) / 18.0;
+      const recircStr = (state.recircPct / 6.5) * 1.6;
+      if (recircStr > 0.35 && xMm > 158 && xMm < 245 && zMm < zTop + 8) {
+        const xc = 194.0, zc = zBot * 0.85;
+        const rx = (xMm - xc) / 30.0, rz = (zMm - zc) / 16.0;
         const vort = recircStr * Math.exp(-(rx * rx + rz * rz));
-        u += vort * rz * 1.4;
+        u += vort * rz * 1.3;
         w += -vort * rx * 1.1;
       }
 
@@ -361,23 +313,17 @@
     }
 
     function tempToColor(temp, alpha = 0.88) {
-      const t = Math.max(0, Math.min(1, (temp - 24.0) / 56.0));
+      const t = Math.max(0, Math.min(1, (temp - 24.0) / 54.0));
       let r, g, b;
       if (t < 0.35) {
         const k = t / 0.35;
-        r = Math.round(30 + 30 * k);
-        g = Math.round(190 + 50 * k);
-        b = Math.round(255 - 20 * k);
+        r = Math.round(30 + 30 * k); g = Math.round(190 + 50 * k); b = Math.round(255 - 20 * k);
       } else if (t < 0.7) {
         const k = (t - 0.35) / 0.35;
-        r = Math.round(60 + 195 * k);
-        g = Math.round(240 - 80 * k);
-        b = Math.round(235 - 195 * k);
+        r = Math.round(60 + 195 * k); g = Math.round(240 - 80 * k); b = Math.round(235 - 195 * k);
       } else {
         const k = (t - 0.7) / 0.3;
-        r = 255;
-        g = Math.round(160 - 125 * k);
-        b = Math.round(40 - 25 * k);
+        r = 255; g = Math.round(160 - 125 * k); b = Math.round(40 - 25 * k);
       }
       return `rgba(${r},${g},${b},${alpha})`;
     }
@@ -386,57 +332,54 @@
       ctx.fillStyle = '#0d1117';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const zBot = Math.max(state.gapMm, 6.0);
-      const zTop = zBot + 24.0;
-
+      const zBot = 17.0, zTop = 41.0;
       const [m0x, m0y] = mmToPx(0, 0);
       const [m1x, m1y] = mmToPx(320, 0);
       ctx.fillStyle = '#1e293b';
-      ctx.fillRect(m0x, m0y, m1x - m0x, 22);
+      ctx.fillRect(m0x, m0y, m1x - m0x, 20);
 
-      // Ana Blower / Fan (X = 35..75 mm)
-      const [f0x, f0y] = mmToPx(35, zBot * 0.60);
-      const [f1x, f1y] = mmToPx(75, zBot * 0.15);
-      if (state.fanPct > 0) {
-        const is12V = state.fanType === 'blower_12v';
-        ctx.fillStyle = is12V ? 'rgba(168, 85, 247, 0.42)' : 'rgba(14, 165, 233, 0.28)';
-        ctx.strokeStyle = is12V ? '#d8b4fe' : '#38bdf8';
-        ctx.lineWidth = 1.8;
-        ctx.fillRect(f0x, f0y, f1x - f0x, f1y - f0y);
-        ctx.strokeRect(f0x, f0y, f1x - f0x, f1y - f0y);
+      // Kutu İçi Bölme Duvarları (2 veya 3 Bölmeli Manifold)
+      if (state.intakeZones >= 2) {
+        const [w0x, w0y] = mmToPx(32, zBot);
+        const [w1x, w1y] = mmToPx(35, 2);
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
+        ctx.fillRect(w0x, w0y, w1x - w0x, w1y - w0y);
       }
-
-      // Evrensel Dikdörtgen EPDM Conta ve Arka Menteşe Barajı
-      if (state.seal) {
-        const [s0x, s0y] = mmToPx(162, zBot);
-        const [s1x, s1y] = mmToPx(171, 0);
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.82)';
-        ctx.fillRect(s0x, s0y, s1x - s0x, (s1y - s0y) * 0.65);
-        ctx.fillStyle = '#86efac';
+      if (state.intakeZones === 3) {
+        const [v0x, v0y] = mmToPx(2, zBot - 1);
+        const [v1x, v1y] = mmToPx(28, 3);
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.22)';
+        ctx.fillRect(v0x, v0y, v1x - v0x, v1y - v0y);
+        ctx.fillStyle = '#34d399';
         ctx.font = 'bold 12px sans-serif';
-        ctx.fillText('Dikdörtgen EPDM Conta', s0x - 135, s0y + 15);
-      }
-      if (state.hingeDam) {
-        const [d0x, d0y] = mmToPx(173, zBot);
-        const [d1x, d1y] = mmToPx(179, 0);
-        ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
-        ctx.fillRect(d0x, d0y, d1x - d0x, (d1y - d0y) * 0.50);
+        ctx.fillText('Orta VRM Jeti', v0x + 2, v0y + 16);
       }
 
-      if (state.ejecPct > 0) {
-        const [n0x, n0y] = mmToPx(176, Math.max(3, zBot - 1));
-        ctx.fillStyle = '#f59e0b';
-        ctx.beginPath();
-        ctx.arc(n0x, n0y, 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      // Ana Blower Gösterimi
+      const fw = FAN_DB[state.fanSize].d * 0.65;
+      const [f0x, f0y] = mmToPx(68 - fw / 2, zBot * 0.65);
+      const [f1x, f1y] = mmToPx(68 + fw / 2, zBot * 0.12);
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.42)';
+      ctx.strokeStyle = '#d8b4fe';
+      ctx.lineWidth = 1.8;
+      ctx.fillRect(f0x, f0y, f1x - f0x, f1y - f0y);
+      ctx.strokeRect(f0x, f0y, f1x - f0x, f1y - f0y);
+      ctx.fillStyle = '#e9d5ff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(`${state.fanCount}×${state.fanSize}`, f0x + 6, f1y - 4);
+
+      // Çevre Contası + Arka Menteşe Barajı
+      const [s0x, s0y] = mmToPx(164, zBot);
+      const [s1x, s1y] = mmToPx(174, 0);
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.82)';
+      ctx.fillRect(s0x, s0y, s1x - s0x, (s1y - s0y) * 0.65);
 
       for (let i = 0; i < particles2D.length; i++) {
         const p = particles2D[i];
         const [u, w] = velocity2D(p.x, p.z);
         const pxOld = p.x, pzOld = p.z;
-        p.x += u * 0.85 + (Math.random() - 0.5) * 0.35;
-        p.z += w * 0.85 + (Math.random() - 0.5) * 0.25;
+        p.x += u * 0.85 + (Math.random() - 0.5) * 0.32;
+        p.z += w * 0.85 + (Math.random() - 0.5) * 0.24;
         p.age += 1;
 
         if (p.x <= 180 && p.z >= zBot && p.z <= zTop) {
@@ -447,15 +390,14 @@
 
         const [x0, y0] = mmToPx(pxOld, pzOld);
         const [x1, y1] = mmToPx(p.x, p.z);
-
         ctx.beginPath();
         ctx.moveTo(x0, y0);
         ctx.lineTo(x1, y1);
-        ctx.strokeStyle = p.smoke ? 'rgba(226, 232, 240, 0.88)' : tempToColor(p.temp, 0.85);
+        ctx.strokeStyle = p.smoke ? 'rgba(226, 232, 240, 0.9)' : tempToColor(p.temp, 0.85);
         ctx.lineWidth = p.smoke ? 2.6 : 2.0;
         ctx.stroke();
 
-        if (p.age > p.maxAge || p.x < 2 || p.x > 318 || p.z < 0.5 || p.z > 92) {
+        if (p.age > p.maxAge || p.x < 1 || p.x > 318 || p.z < 0.5 || p.z > 92) {
           spawnParticle(p, false);
         }
       }
@@ -464,49 +406,49 @@
       const [l1x, l1y] = mmToPx(180, zBot);
       const lapGrad = ctx.createLinearGradient(l0x, l0y, l1x, l0y);
       lapGrad.addColorStop(0, tempToColor(state.T_cpu, 0.58));
-      lapGrad.addColorStop(1, 'rgba(30, 41, 59, 0.85)');
+      lapGrad.addColorStop(1, 'rgba(30, 41, 59, 0.88)');
       ctx.fillStyle = lapGrad;
       ctx.fillRect(l0x, l0y, l1x - l0x, l1y - l0y);
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 2;
       ctx.strokeRect(l0x, l0y, l1x - l0x, l1y - l0y);
 
-      const [ig0x, ig0y] = mmToPx(32, zBot);
-      const [ig1x, ig1y] = mmToPx(78, zBot);
+      // Giriş Izgaraları (Ana + 3 Bölmede Orta VRM Izgarası)
+      const [ig0x, ig0y] = mmToPx(44, zBot);
+      const [ig1x, ig1y] = mmToPx(92, zBot);
       ctx.strokeStyle = '#22d3ee';
       ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(ig0x, ig0y);
-      ctx.lineTo(ig1x, ig1y);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ig0x, ig0y); ctx.lineTo(ig1x, ig1y); ctx.stroke();
 
-      const [eg0x, eg0y] = mmToPx(180, zBot + 7);
-      const [eg1x, eg1y] = mmToPx(180, zBot + 18);
+      if (state.intakeZones === 3) {
+        const [vg0x, vg0y] = mmToPx(2, zBot);
+        const [vg1x, vg1y] = mmToPx(26, zBot);
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(vg0x, vg0y); ctx.lineTo(vg1x, vg1y); ctx.stroke();
+      }
+
+      // Egzoz Çıkış Portları (2 veya 4 Kanallı Bölünmüş Tahliye)
+      const [eg0x, eg0y] = mmToPx(180, zBot + 6);
+      const [eg1x, eg1y] = mmToPx(180, zBot + 19);
       ctx.strokeStyle = '#fb7185';
       ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(eg0x, eg0y);
-      ctx.lineTo(eg1x, eg1y);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(eg0x, eg0y); ctx.lineTo(eg1x, eg1y); ctx.stroke();
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 12px sans-serif';
-      ctx.fillText(`LAPTOP (135W)  •  T_CPU: ${state.T_cpu.toFixed(1)} °C  •  Gerçekçi Kazanç: -${(90.6 - state.T_cpu).toFixed(1)} °C`, l0x + 12, (l0y + l1y) / 2 + 4);
-      ctx.fillStyle = '#22d3ee';
-      ctx.font = '12px sans-serif';
-      ctx.fillText(`Geniş Alt Izgara (${state.T_inlet.toFixed(1)}°C)`, ig0x - 4, ig0y - 6);
+      ctx.fillText(`LAPTOP (135W) • T_CPU: ${state.T_cpu.toFixed(1)} °C • Kazanç: -${(92.0 - state.T_cpu).toFixed(1)} °C`, l0x + 10, (l0y + l1y) / 2 + 4);
       ctx.fillStyle = '#fda4af';
-      ctx.fillText(`Egzoz (${state.T_exh.toFixed(0)}°C)`, eg0x + 8, eg1y - 2);
+      ctx.fillText(`${state.exhaustPorts} Kanallı Egzoz (${state.T_exh.toFixed(0)}°C)`, eg0x + 8, eg1y - 2);
     }
 
     const particles3D = [];
-    for (let i = 0; i < 160; i++) {
+    for (let i = 0; i < 180; i++) {
       particles3D.push({
-        side: i % 2 === 0 ? 1 : -1,
+        idx: i,
         phase: Math.random(),
-        type: i < 105 ? 'intake' : 'ejector',
-        offsetAngle: Math.random() * Math.PI * 2,
-        radius: 10 + Math.random() * 22
+        zone: i % 3, // 0: Sol CPU, 1: Sağ GPU, 2: Orta VRM
+        exhPort: i % 4 // 0,1: Yanlar, 2,3: Arka-Köşeler
       });
     }
 
@@ -517,8 +459,8 @@
       const cx = Math.cos(state.rotX), sx = Math.sin(state.rotX);
       const y2 = y1 * cx - z * sx;
       const z2 = y1 * sx + z * cx;
-      const scale = 1.55;
-      return [canvas.width / 2 + x1 * scale, canvas.height / 2 + 15 - z2 * scale, y2];
+      const scale = 1.48;
+      return [canvas.width / 2 + x1 * scale, canvas.height / 2 + 16 - z2 * scale, y2];
     }
 
     function drawBox3D(x0, y0, z0, w, d, h, strokeCol, fillCol) {
@@ -530,98 +472,105 @@
       if (fillCol) {
         ctx.fillStyle = fillCol;
         ctx.beginPath();
-        ctx.moveTo(pts[4][0], pts[4][1]);
-        ctx.lineTo(pts[5][0], pts[5][1]);
-        ctx.lineTo(pts[6][0], pts[6][1]);
-        ctx.lineTo(pts[7][0], pts[7][1]);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(pts[4][0], pts[4][1]); ctx.lineTo(pts[5][0], pts[5][1]);
+        ctx.lineTo(pts[6][0], pts[6][1]); ctx.lineTo(pts[7][0], pts[7][1]);
+        ctx.closePath(); ctx.fill();
       }
-
       ctx.strokeStyle = strokeCol;
       ctx.lineWidth = 1.2;
       const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
       ctx.beginPath();
       for (const [a, b] of edges) {
-        ctx.moveTo(pts[a][0], pts[a][1]);
-        ctx.lineTo(pts[b][0], pts[b][1]);
+        ctx.moveTo(pts[a][0], pts[a][1]); ctx.lineTo(pts[b][0], pts[b][1]);
       }
       ctx.stroke();
+    }
+
+    function getBlowerPositions() {
+      const n = state.fanCount;
+      if (n === 2) return [[-65, 25], [65, 25]];
+      if (n === 4) return [[-72, -35], [-45, 75], [72, -35], [45, 75]];
+      if (n === 6) return [[-78, -45], [-72, 65], [0, -50], [0, 65], [78, -45], [72, 65]];
+      return [[-82, -55], [-82, 20], [-52, 85], [-18, -35], [18, -35], [52, 85], [82, 20], [82, -55]];
     }
 
     function draw3D() {
       ctx.fillStyle = '#0d1117';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const zPad = state.gapMm;
-      state.fanPhase += (state.fanPct / 100.0) * 0.22;
+      const zPad = 14.0;
+      const rFan = FAN_DB[state.fanSize].d / 2.0;
 
-      drawBox3D(-115, -130, zPad, 230, 260, 14, '#64748b', 'rgba(30, 41, 59, 0.65)');
-      drawBox3D(117, -130, zPad, 75, 260, 14, '#475569', 'rgba(30, 41, 59, 0.5)');
-      drawBox3D(-192, -130, zPad, 75, 260, 14, '#475569', 'rgba(30, 41, 59, 0.5)');
+      // Ana Gövde ve Yan Kanatlar
+      drawBox3D(-115, -125, zPad, 230, 250, 14, '#64748b', 'rgba(30, 41, 59, 0.65)');
+      drawBox3D(117, -125, zPad, 72, 250, 14, '#475569', 'rgba(30, 41, 59, 0.45)');
+      drawBox3D(-189, -125, zPad, 72, 250, 14, '#475569', 'rgba(30, 41, 59, 0.45)');
 
-      // Evrensel Dikdörtgen EPDM Conta (Yeşil)
-      if (state.seal) {
-        drawBox3D(-98, -34, zPad + 14, 196, 126, 3, '#22c55e', 'rgba(34, 197, 94, 0.25)');
+      // Giriş Kutusu Bölmeleri (1, 2 veya 3 Bölmeli Manifold)
+      if (state.intakeZones === 1) {
+        drawBox3D(-100, -45, zPad + 14, 200, 145, 3, '#22c55e', 'rgba(34, 197, 94, 0.22)');
+      } else if (state.intakeZones === 2) {
+        drawBox3D(-102, -45, zPad + 14, 96, 145, 3, '#22c55e', 'rgba(34, 197, 94, 0.25)');
+        drawBox3D(6, -45, zPad + 14, 96, 145, 3, '#22c55e', 'rgba(34, 197, 94, 0.25)');
+      } else {
+        // 3 Bölmeli: Sol CPU + Orta VRM/Isı Borusu Koridoru + Sağ GPU
+        drawBox3D(-104, -45, zPad + 14, 72, 145, 3, '#22c55e', 'rgba(34, 197, 94, 0.25)');
+        drawBox3D(-26, -35, zPad + 14, 52, 130, 3, '#38bdf8', 'rgba(56, 189, 248, 0.32)');
+        drawBox3D(32, -45, zPad + 14, 72, 145, 3, '#22c55e', 'rgba(34, 197, 94, 0.25)');
       }
-      // Arka Menteşe Altı Sıcak Hava Barajı (Mavi-Yeşil Şerit)
-      if (state.hingeDam) {
-        drawBox3D(-108, 112, zPad + 14, 216, 10, 3, '#38bdf8', 'rgba(56, 189, 248, 0.55)');
-      }
 
-      // 4x 5015 12V Radyal Blower
-      const blowers = [[-78, -58], [-32, 102], [78, -58], [32, 102]];
+      // Dinamik Ana Blower Dizilimi (2, 4, 6, 8 Adet & Seçilen Çap)
+      const blowers = getBlowerPositions();
       for (const [bx, by] of blowers) {
         ctx.strokeStyle = '#c084fc';
-        ctx.lineWidth = 1.6;
+        ctx.lineWidth = 1.8;
         ctx.beginPath();
         for (let a = 0; a <= 20; a++) {
           const ang = (a / 20) * Math.PI * 2;
-          const [px, py] = project3D(bx + Math.cos(ang) * 24, by + Math.sin(ang) * 24, zPad + 12);
+          const [px, py] = project3D(bx + Math.cos(ang) * rFan, by + Math.sin(ang) * rFan, zPad + 12);
           if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
         }
         ctx.stroke();
       }
 
-      drawBox3D(142, 0, zPad + 2, 48, 40, 10, '#f59e0b', 'rgba(245, 158, 11, 0.55)');
-      drawBox3D(-190, 0, zPad + 2, 48, 40, 10, '#f59e0b', 'rgba(245, 158, 11, 0.55)');
+      // Egzoz Çıkış Kanalları (2 Yan + 2 Arka-Köşe Menteşe Tahliye)
+      if (state.exhaustPorts >= 2) {
+        drawBox3D(140, 5, zPad + 2, 46, 38, 10, '#f59e0b', 'rgba(245, 158, 11, 0.55)');
+        drawBox3D(-186, 5, zPad + 2, 46, 38, 10, '#f59e0b', 'rgba(245, 158, 11, 0.55)');
+      }
+      if (state.exhaustPorts === 4) {
+        drawBox3D(88, 95, zPad + 3, 42, 32, 11, '#fb7185', 'rgba(251, 113, 133, 0.55)');
+        drawBox3D(-130, 95, zPad + 3, 42, 32, 11, '#fb7185', 'rgba(251, 113, 133, 0.55)');
+      }
 
+      // 3B Akış Partikülleri
       for (const p of particles3D) {
-        p.phase += 0.018 * Math.max(0.25, state.fanPct / 100.0);
+        p.phase += 0.020;
         if (p.phase > 1) p.phase -= 1;
-
-        if (p.type === 'intake') {
-          const cx = p.side * 55, cy = 25;
-          let x, y, z, col;
-          if (p.phase < 0.45) {
-            const k = p.phase / 0.45;
-            x = cx + (Math.random() - 0.5) * 30;
-            y = -115 + k * 140;
-            z = zPad + 6;
-            col = '#22d3ee';
-          } else {
-            const k = (p.phase - 0.45) / 0.55;
-            x = cx + p.side * k * 135;
-            y = cy + Math.sin(p.offsetAngle) * p.radius * (1 - 0.5 * k);
-            z = zPad + 14 + k * 16;
-            col = k > 0.65 ? '#fb7185' : '#38bdf8';
-          }
-          const [px, py] = project3D(x, y, z);
-          ctx.fillStyle = col;
-          ctx.beginPath();
-          ctx.arc(px, py, 2.3, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (state.ejecPct > 5) {
-          const k = p.phase;
-          const x = p.side * (190 + k * 95);
-          const y = 20 + (p.radius - 20) * 0.8;
-          const z = zPad + 8 + k * 35;
-          const [px, py] = project3D(x, y, z);
-          ctx.fillStyle = '#fde047';
-          ctx.beginPath();
-          ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-          ctx.fill();
+        const k = p.phase;
+        let x, y, z, col;
+        if (k < 0.52) {
+          // Giriş Bölgeleri
+          const kk = k / 0.52;
+          const zIdx = state.intakeZones === 3 ? p.zone : (p.zone % 2);
+          const cx = zIdx === 0 ? -68 : (zIdx === 1 ? 68 : 0);
+          x = cx + Math.sin(p.idx) * 20;
+          y = -95 + kk * 120;
+          z = zPad + 6 + kk * 14;
+          col = zIdx === 2 ? '#34d399' : '#38bdf8';
+        } else {
+          // 4 Kanallı Bölünmüş Egzoz Tahliyesi
+          const kk = (k - 0.52) / 0.48;
+          const port = state.exhaustPorts === 4 ? p.exhPort : (p.exhPort % 2);
+          if (port === 0) { x = 145 + kk * 85; y = 20 + kk * 15; z = zPad + 14 + kk * 22; }
+          else if (port === 1) { x = -145 - kk * 85; y = 20 + kk * 15; z = zPad + 14 + kk * 22; }
+          else if (port === 2) { x = 95 + kk * 65; y = 105 + kk * 55; z = zPad + 15 + kk * 24; }
+          else { x = -95 - kk * 65; y = 105 + kk * 55; z = zPad + 15 + kk * 24; }
+          col = '#fb7185';
         }
+        const [px, py] = project3D(x, y, z);
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(px, py, 2.3, 0, Math.PI * 2); ctx.fill();
       }
     }
 
@@ -632,10 +581,7 @@
 
     let mouseDown = false;
     canvas.addEventListener('mousedown', (e) => {
-      mouseDown = true;
-      state.lastX = e.clientX;
-      state.lastY = e.clientY;
-      if (state.mode === '2D') injectSmokeAtEvent(e);
+      mouseDown = true; state.lastX = e.clientX; state.lastY = e.clientY;
     });
     window.addEventListener('mouseup', () => { mouseDown = false; });
     canvas.addEventListener('mousemove', (e) => {
@@ -643,98 +589,70 @@
       if (state.mode === '3D') {
         state.rotZ += (e.clientX - state.lastX) * 0.01;
         state.rotX = Math.max(0.15, Math.min(1.35, state.rotX + (e.clientY - state.lastY) * 0.01));
-        state.lastX = e.clientX;
-        state.lastY = e.clientY;
-      } else {
-        injectSmokeAtEvent(e);
+        state.lastX = e.clientX; state.lastY = e.clientY;
       }
     });
-
-    function injectSmokeAtEvent(e) {
-      const rect = canvas.getBoundingClientRect();
-      const px = ((e.clientX - rect.left) / rect.width) * canvas.width;
-      const py = ((e.clientY - rect.top) / rect.height) * canvas.height;
-      const [xMm, zMm] = pxToMm(px, py);
-      for (let i = 0; i < 6; i++) {
-        const idx = Math.floor(Math.random() * particles2D.length);
-        spawnParticle(particles2D[idx], true, xMm + (Math.random() - 0.5) * 6, zMm + (Math.random() - 0.5) * 4);
-      }
-    }
 
     document.getElementById('btnSmokeBurst').addEventListener('click', () => {
-      const zBot = Math.max(state.gapMm, 6.0);
-      for (let i = 0; i < 75; i++) {
-        spawnParticle(particles2D[i], true, 184 + Math.random() * 14, zBot + 6 + Math.random() * 12);
+      for (let i = 0; i < 80; i++) {
+        spawnParticle(particles2D[i], true, 182 + Math.random() * 14, 22 + Math.random() * 12);
       }
     });
 
-    const selFanType = document.getElementById('selFanType');
-    const slFan = document.getElementById('slFan');
-    const slGap = document.getElementById('slGap');
-    const slEjec = document.getElementById('slEjec');
-    const chkSeal = document.getElementById('chkSeal');
-    const chkHingeDam = document.getElementById('chkHingeDam');
+    const selFanSize = document.getElementById('selFanSize');
+    const selFanCount = document.getElementById('selFanCount');
+    const selIntakeZones = document.getElementById('selIntakeZones');
+    const selExhaustPorts = document.getElementById('selExhaustPorts');
 
-    function syncControlsToState() {
-      state.fanType = selFanType.value;
-      state.fanPct = parseFloat(slFan.value);
-      state.gapMm = parseFloat(slGap.value);
-      state.ejecPct = parseFloat(slEjec.value);
-      state.seal = chkSeal.checked;
-      state.hingeDam = chkHingeDam.checked;
-
-      document.getElementById('valFan').textContent = state.fanPct.toFixed(0) + '%';
-      document.getElementById('valGap').textContent = state.gapMm.toFixed(1) + ' mm';
-      document.getElementById('valEjec').textContent = `${state.ejecPct.toFixed(0)}% (${(7.8 * state.ejecPct / 100).toFixed(1)} m/s)`;
+    function syncControls() {
+      state.fanSize = selFanSize.value;
+      state.fanCount = parseInt(selFanCount.value, 10);
+      state.intakeZones = parseInt(selIntakeZones.value, 10);
+      state.exhaustPorts = parseInt(selExhaustPorts.value, 10);
       updatePhysics();
     }
 
-    [selFanType, slFan, slGap, slEjec, chkSeal, chkHingeDam].forEach(el => {
-      el.addEventListener('input', syncControlsToState);
-      el.addEventListener('change', syncControlsToState);
+    [selFanSize, selFanCount, selIntakeZones, selExhaustPorts].forEach(el => {
+      el.addEventListener('change', syncControls);
     });
 
     const presets = {
-      A: { type: 'axial_8010', fan: 0, gap: 2.5, ejec: 0, seal: false, dam: false },
-      B: { type: 'axial_8010', fan: 0, gap: 15.0, ejec: 0, seal: false, dam: false },
-      C: { type: 'axial_8010', fan: 100, gap: 15.0, ejec: 0, seal: false, dam: false },
-      D: { type: 'blower_5v', fan: 100, gap: 15.0, ejec: 0, seal: true, dam: true },
-      E: { type: 'blower_12v', fan: 100, gap: 17.0, ejec: 100, seal: true, dam: true }
+      BASE:    { size: '5015', count: 4, zones: 1, exh: 2 },
+      SLIM8:   { size: '4010', count: 8, zones: 3, exh: 4 },
+      SIX50:   { size: '5015', count: 6, zones: 3, exh: 4 },
+      SWEET60: { size: '6015', count: 4, zones: 3, exh: 4 },
+      MAX75:   { size: '7515', count: 4, zones: 3, exh: 4 }
     };
 
     document.querySelectorAll('.preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const p = presets[btn.dataset.preset];
-        selFanType.value = p.type;
-        slFan.value = p.fan;
-        slGap.value = p.gap;
-        slEjec.value = p.ejec;
-        chkSeal.checked = p.seal;
-        chkHingeDam.checked = p.dam;
+        selFanSize.value = p.size;
+        selFanCount.value = String(p.count);
+        selIntakeZones.value = String(p.zones);
+        selExhaustPorts.value = String(p.exh);
         document.querySelectorAll('.preset-btn').forEach(b => {
           b.className = 'preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400';
         });
         btn.className = 'preset-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium';
-        syncControlsToState();
+        syncControls();
       });
     });
 
     const btn2D = document.getElementById('btnMode2D');
     const btn3D = document.getElementById('btnMode3D');
-
     btn2D.addEventListener('click', () => {
       state.mode = '2D';
       btn2D.className = 'px-2 py-1 font-medium bg-cyan-500/20 text-cyan-400';
       btn3D.className = 'px-2 py-1 font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]';
     });
-
     btn3D.addEventListener('click', () => {
       state.mode = '3D';
       btn3D.className = 'px-2 py-1 font-medium bg-cyan-500/20 text-cyan-400';
       btn2D.className = 'px-2 py-1 font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]';
     });
 
-    syncControlsToState();
+    syncControls();
     animate();
   </script>
 </body>
