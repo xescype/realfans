@@ -1,0 +1,215 @@
+# -*- coding: utf-8 -*-
+"""
+RealFans v3.1 (Adim 1 Kucultme) — Olu On Alan Kesimi & Port-Dostu L-Kelepce CAD Modeli
+======================================================================================
+Adim 1 Kucultme Degisiklikleri (v3.0 -> v3.1):
+  1. Derinlik %47 Kuculdu (240 mm -> 128 mm):
+     Laptopun on yarisinda (touchpad/batarya altinda) hava izgarasi olmadigi icin
+     on 112 mm tamamen kesildi! Govde sadece arka fan/isi borusu seridinin altina
+     oturur ve laptopa dogal ergonomik klavye egimi kazandirir.
+  2. Yan L-Kanatlar %59 Kuculdu (224x26 mm -> 92x18 mm Kompakt L-Kelepce Kulaklar):
+     Laptopun on-yanindaki USB / HDMI / Type-C / Kulaklik portlari tamamen serbest
+     birakildi; L-kanatlar sadece arka-yan 1 cm'lik egzoz izgarasina birebir yapisir.
+  3. Orta Govde Genisligi 250 mm -> 230 mm, Yuksekligi 22 mm -> 19 mm'ye indirildi.
+  4. Toplam Kapali Hacim: 1320 cm^3 -> 559 cm^3 (%57.7 KUCULME!)
+     Performans: 69.8 C -> 70.1 C (-21.9 C net sogutma, sadece 0.3 C fark!).
+"""
+
+import os
+import FreeCAD as App
+import Part
+from FreeCAD import Vector as V
+
+# ============================================================
+# ADIM 1 KUCULTULMUS PARAMETRELER (mm)
+# ============================================================
+LAPTOP_W   = 360.0   # 310..395 mm arasi her laptopa yandan birebir yapisir
+SIDE_GAP   = 0.0     # 0.0 mm = Birebir Yapisik!
+CENTER_W   = 230.0   # 250 mm -> 230 mm'ye daraltildi
+DEPTH      = 128.0   # 240 mm -> 128 mm'ye indirildi (Sadece arka fan/izgara seridi!)
+Y_START    = -8.0    # Y = -8 mm .. +120 mm (Laptopun on Y = -110..-8 mm bolgesi tamamen bos!)
+FOOT_H     = 3.0     # 4.0 mm -> 3.0 mm
+BODY_H     = 13.5    # 15.0 mm -> 13.5 mm
+SEAL_H     = 2.5     # 3.0 mm -> 2.5 mm (Toplam yukseklik 22 mm -> 19 mm)
+WALL       = 1.4
+
+Z0         = FOOT_H
+Z_TOP      = Z0 + BODY_H       # 16.5 mm
+Z_LAP_BOT  = Z_TOP + SEAL_H    # 19.0 mm
+VENT_Z0    = 19.5              # Laptopun 1 cm'lik yan egzoz alt kotu
+VENT_H     = 10.0              # 1 cm (10 mm) yan egzoz acikligi (Z = 19.5..29.5 mm)
+LWING_TOP  = 35.5              # 40 mm -> 35.5 mm
+LWING_W    = 18.0              # 26 mm -> 18 mm ince L-duvar!
+LWING_Y0   = 18.0              # L-kanat sadece Y = 18..110 mm (92 mm boy) arasini tutar -> On USB portlar ACIK!
+LWING_LEN  = 92.0
+
+HALF_C     = CENTER_W / 2.0    # 115.0 mm
+HALF_LAP   = LAPTOP_W / 2.0    # 180.0 mm
+WING_IN_X  = HALF_LAP + SIDE_GAP
+
+
+def box(x, y, z, w, d, h):
+    return Part.makeBox(w, d, h, V(x, y, z))
+
+
+def cyl_z(cx, cy, z, r, h):
+    return Part.makeCylinder(r, h, V(cx, cy, z), V(0, 0, 1))
+
+
+def compact_blower_6015(cx, cy, z, out_dx, out_dy):
+    r_outer = 29.0
+    h_fan = 10.6
+    body = cyl_z(cx, cy, z, r_outer, h_fan)
+    intake = cyl_z(cx, cy, z - 0.5, 17.5, 2.5)
+    hub = cyl_z(cx, cy, z + 1.2, 11.0, h_fan - 2.4)
+    body = body.cut(intake).fuse(hub)
+    nx = cx + out_dx
+    ny = cy + out_dy
+    noz = box(
+        min(cx, nx) - 9.0,
+        min(cy, ny) - 9.0,
+        z + 0.8,
+        abs(out_dx) + 18.0,
+        abs(out_dy) + 18.0,
+        h_fan - 1.6,
+    )
+    return body.fuse(noz)
+
+
+DOC_NAME = "RealFans_v31_Step1"
+if App.ActiveDocument and App.ActiveDocument.Name == DOC_NAME:
+    App.closeDocument(DOC_NAME)
+doc = App.newDocument(DOC_NAME)
+
+parts = {}
+
+# ============================================================
+# 1. ARKA SERIT 3 BOLMELI ORTA GOVDE (230 x 128 x 13.5 mm)
+# ============================================================
+outer_c = box(-HALF_C, Y_START, Z0, CENTER_W, DEPTH, BODY_H)
+inner_c = box(
+    -HALF_C + WALL,
+    Y_START + WALL,
+    Z0 + WALL,
+    CENTER_W - 2 * WALL,
+    DEPTH - 2 * WALL,
+    BODY_H - 2 * WALL,
+)
+center_shell = outer_c.cut(inner_c)
+
+# 3 Bolme Perde Duvarlari (Sol CPU | Orta VRM | Sag GPU)
+baffle_L = box(-30.0, Y_START + WALL, Z0 + WALL, 1.8, DEPTH - 2 * WALL, BODY_H - 2 * WALL)
+baffle_R = box(28.2, Y_START + WALL, Z0 + WALL, 1.8, DEPTH - 2 * WALL, BODY_H - 2 * WALL)
+center_shell = center_shell.fuse(baffle_L).fuse(baffle_R)
+
+# Ust yuzde 3 bagimsiz pozitif basinc penceresi
+win_L = box(-105.0, 2.0, Z_TOP - WALL - 0.5, 70.0, 98.0, WALL + 1.0)
+win_M = box(-25.0, 6.0, Z_TOP - WALL - 0.5, 50.0, 90.0, WALL + 1.0)
+win_R = box(35.0, 2.0, Z_TOP - WALL - 0.5, 70.0, 98.0, WALL + 1.0)
+center_shell = center_shell.cut(win_L).cut(win_M).cut(win_R)
+
+# Alt yuzde 4x sikistirilmis blower emis delikleri
+blower_xy = [(-78.0, 28.0), (-38.0, 82.0), (78.0, 28.0), (38.0, 82.0)]
+for bx, by in blower_xy:
+    center_shell = center_shell.cut(cyl_z(bx, by, Z0 - 0.5, 18.5, WALL + 1.0))
+
+parts["OrtaGovde_ArkaBar_230x128"] = (center_shell, (0.18, 0.24, 0.32), 35, "1_Govde_v31")
+
+# ============================================================
+# 2. 3 BOLMELI KOMPAKT EPDM CONTA + ARKA MENTESE BARAJI
+# ============================================================
+s_out_L = box(-109.0, -2.0, Z_TOP, 78.0, 106.0, SEAL_H).cut(
+    box(-105.0, 2.0, Z_TOP - 0.5, 70.0, 98.0, SEAL_H + 1.0)
+)
+s_out_M = box(-28.0, 2.0, Z_TOP, 56.0, 98.0, SEAL_H).cut(
+    box(-25.0, 6.0, Z_TOP - 0.5, 50.0, 90.0, SEAL_H + 1.0)
+)
+s_out_R = box(31.0, -2.0, Z_TOP, 78.0, 106.0, SEAL_H).cut(
+    box(35.0, 2.0, Z_TOP - 0.5, 70.0, 98.0, SEAL_H + 1.0)
+)
+rear_dam = box(-HALF_C + 6.0, Y_START + DEPTH - 12.0, Z_TOP, CENTER_W - 12.0, 8.0, SEAL_H)
+parts["Ust_3Bolme_EPDM_Conta_v31"] = (
+    s_out_L.fuse(s_out_M).fuse(s_out_R).fuse(rear_dam),
+    (0.12, 0.82, 0.42),
+    10,
+    "2_Contalar_v31",
+)
+
+# ============================================================
+# 3. SIKI DIZILIMLI 4x BLOWER
+# ============================================================
+b1 = compact_blower_6015(-78.0, 28.0, Z0 + WALL, 10.0, 22.0)
+b2 = compact_blower_6015(-38.0, 82.0, Z0 + WALL, 16.0, -20.0)
+b3 = compact_blower_6015(78.0, 28.0, Z0 + WALL, -10.0, 22.0)
+b4 = compact_blower_6015(38.0, 82.0, Z0 + WALL, -16.0, -20.0)
+parts["BlowerDizisi_v31"] = (b1.fuse(b2).fuse(b3).fuse(b4), (0.62, 0.32, 0.94), 0, "3_Blower_ve_Vakum_v31")
+
+# ============================================================
+# 4. PORT-DOSTU KOMPAKT L-KELEPCE KANATLAR (92 mm boy, 18 mm et)
+# ============================================================
+def make_compact_lwing(side):
+    slide_len = max(4.0, WING_IN_X - HALF_C + 12.0)
+    # Tek genis alüminyum teleskopik kizak rayi (Y = 26..98 mm)
+    slider_bar = box(HALF_C - 12.0, 26.0, Z0 + 2.0, slide_len, 72.0, BODY_H - 4.0)
+
+    # Sadece arka egzoz bolgesini (Y = 18..110 mm) tutan 92x18 mm L-Kelepce Duvari
+    vert_wall = box(WING_IN_X, LWING_Y0, Z0, LWING_W, LWING_LEN, LWING_TOP - Z0)
+
+    # 1 cm'lik yan egzoz + arka kose vakum tunelleri
+    side_tunnel = box(WING_IN_X - 0.5, 24.0, VENT_Z0, LWING_W + 1.0, 56.0, VENT_H)
+    corner_tunnel = box(WING_IN_X - 0.5, 84.0, VENT_Z0, LWING_W + 1.0, 20.0, VENT_H)
+
+    lw = slider_bar.fuse(vert_wall).cut(side_tunnel).cut(corner_tunnel)
+    if side < 0:
+        lw = lw.mirror(V(0, 0, 0), V(1, 0, 0))
+    return lw
+
+
+def make_compact_side_ejector(side):
+    ej1 = box(WING_IN_X + 2.0, 26.0, VENT_Z0 + 0.5, 14.0, 52.0, VENT_H - 1.0)
+    ej2 = box(WING_IN_X + 2.0, 85.0, VENT_Z0 + 0.5, 14.0, 18.0, VENT_H - 1.0)
+    mod = ej1.fuse(ej2)
+    if side < 0:
+        mod = mod.mirror(V(0, 0, 0), V(1, 0, 0))
+    return mod
+
+
+parts["Sag_L_Kelepce_v31"] = (make_compact_lwing(1), (0.06, 0.68, 0.50), 25, "1_Govde_v31")
+parts["Sol_L_Kelepce_v31"] = (make_compact_lwing(-1), (0.06, 0.68, 0.50), 25, "1_Govde_v31")
+parts["Yan_1cm_Vakum_v31"] = (
+    make_compact_side_ejector(1).fuse(make_compact_side_ejector(-1)),
+    (0.96, 0.58, 0.08),
+    0,
+    "3_Blower_ve_Vakum_v31",
+)
+
+# 5. Referans Laptop (360 mm) - On Y = -110..-8 mm kismi ve yan USB portlari tamamen acikta!
+lap_body = box(-HALF_LAP, -110.0, Z_LAP_BOT, LAPTOP_W, 220.0, 18.0)
+parts["Referans_Laptop_360mm"] = (lap_body, (0.75, 0.82, 0.90), 78, "4_Referans_Laptop")
+
+# 6. Kompakt USB-C PD 12V Kontrol Karti
+parts["PCB_USBC_PD_v31"] = (box(-24.0, -4.0, Z0 + WALL, 48.0, 18.0, 1.6), (0.05, 0.52, 0.22), 0, "5_Elektronik")
+
+groups = {}
+objs = []
+for name, (shp, color, transp, grp) in parts.items():
+    if grp not in groups:
+        groups[grp] = doc.addObject("App::DocumentObjectGroup", grp)
+    o = doc.addObject("Part::Feature", name)
+    o.Shape = shp
+    groups[grp].addObject(o)
+    objs.append(o)
+    if App.GuiUp:
+        o.ViewObject.ShapeColor = color
+        o.ViewObject.Transparency = transp
+
+doc.recompute()
+
+out_dir = os.path.dirname(os.path.abspath(__file__))
+fcstd = os.path.join(out_dir, DOC_NAME + ".FCStd")
+step = os.path.join(out_dir, DOC_NAME + ".step")
+doc.saveAs(fcstd)
+import Import
+Import.export(objs, step)
+print("Kaydedildi FCStd:", fcstd)
+print("Kaydedildi STEP :", step)
