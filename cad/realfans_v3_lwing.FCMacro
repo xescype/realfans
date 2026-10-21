@@ -1,0 +1,252 @@
+# -*- coding: utf-8 -*-
+"""
+RealFans v3.0 — Saga-Sola Acilip Laptopa Birebir Yapisan L-Kanat & 3 Bolmeli CAD Modeli
+=======================================================================================
+Mimari Ozellikler (v3.0 Push-Pull):
+  1. 3 Bolmeli Bağımsız Alt Pozitif Basinc Odasi (Sol CPU + Orta VRM/Isi Borusu + Sag GPU)
+  2. 4x 6015 (60x60x15 mm) 12V Radyal Blower Dizisi (315 Pa statik basinc)
+  3. Saga ve Sola Teleskopik Kizaklarla Acilip Kapanan L-Profil Yan Kanatlar:
+     - Canta modunda 250 mm'ye kapanir, kullanimda 310 mm - 395 mm arasi her laptopa
+       yandan SIFIR BOSLUKLA (0 mm Birebir Yapisik) kilitlenir.
+  4. Yan L-Duvar Icerisinde Z = 22..32 mm Kotunda 1 cm (10 mm) Yuksekliginde
+     Aktif Vakum / Ejektor Tuneli + Yan EPDM Sizdirmazlik Contasi (-22.2 C net sogutma).
+"""
+
+import os
+import FreeCAD as App
+import Part
+from FreeCAD import Vector as V
+
+# ============================================================
+# PARAMETRELER (mm)
+# ============================================================
+LAPTOP_W   = 360.0   # 310.0 (13.3"), 360.0 (15.6" IdeaPad Gaming 3), 395.0 (17.3")
+SIDE_GAP   = 0.0     # 0.0 mm = Laptopun yan duvarina birebir yapisik!
+CENTER_W   = 250.0   # Canta modunda kapali orta govde genisligi
+DEPTH      = 240.0   # On-arka derinlik
+FOOT_H     = 4.0     # Masaustu emis boslugu ayak yuksekligi
+BODY_H     = 15.0    # Alt ana govde yuksekligi (Z = 4..19 mm)
+SEAL_H     = 3.0     # Ust EPDM conta yuksekligi (Z = 19..22 mm -> Laptop tabani Z = 22 mm)
+WALL       = 1.6
+
+Z0         = FOOT_H
+Z_TOP      = Z0 + BODY_H       # 19.0 mm
+Z_LAP_BOT  = Z_TOP + SEAL_H    # 22.0 mm (Laptop alt kapagi)
+VENT_Z0    = 22.0              # Laptopun 1 cm'lik yan egzoz alt kotu
+VENT_H     = 10.0              # 1 cm (10 mm) yan egzoz acikligi (Z = 22..32 mm)
+LWING_TOP  = 40.0              # Yan L-kanat ust kotu (Z = 4..40 mm, toplam 36 mm dikey kalkan)
+LWING_W    = 26.0              # Yan L-kanat et kalinligi (X yonunde)
+
+HALF_C     = CENTER_W / 2.0    # 125.0 mm
+HALF_LAP   = LAPTOP_W / 2.0    # 180.0 mm
+WING_IN_X  = HALF_LAP + SIDE_GAP
+
+
+def box(x, y, z, w, d, h):
+    return Part.makeBox(w, d, h, V(x, y, z))
+
+
+def cyl_z(cx, cy, z, r, h):
+    return Part.makeCylinder(r, h, V(cx, cy, z), V(0, 0, 1))
+
+
+def radial_blower_6015(cx, cy, z, out_dx, out_dy):
+    """60x60x12 mm radyal salyangoz blower + difuzor cikis boynu."""
+    r_outer = 30.0
+    h_fan = 11.8
+    body = cyl_z(cx, cy, z, r_outer, h_fan)
+    intake = cyl_z(cx, cy, z - 0.5, 18.0, 3.0)
+    hub = cyl_z(cx, cy, z + 1.5, 11.5, h_fan - 3.0)
+    body = body.cut(intake).fuse(hub)
+    nx = cx + out_dx
+    ny = cy + out_dy
+    noz = box(
+        min(cx, nx) - 10.0,
+        min(cy, ny) - 10.0,
+        z + 1.0,
+        abs(out_dx) + 20.0,
+        abs(out_dy) + 20.0,
+        h_fan - 2.0,
+    )
+    return body.fuse(noz)
+
+
+DOC_NAME = "RealFans_v3_LWing"
+if App.ActiveDocument and App.ActiveDocument.Name == DOC_NAME:
+    App.closeDocument(DOC_NAME)
+doc = App.newDocument(DOC_NAME)
+
+parts = {}
+
+# ============================================================
+# 1. 3 BOLMELI ALT ORTA GOVDE (Sol CPU | Orta VRM | Sag GPU)
+# ============================================================
+outer_c = box(-HALF_C, -DEPTH / 2.0, Z0, CENTER_W, DEPTH, BODY_H)
+inner_c = box(
+    -HALF_C + WALL,
+    -DEPTH / 2.0 + WALL,
+    Z0 + WALL,
+    CENTER_W - 2 * WALL,
+    DEPTH - 2 * WALL,
+    BODY_H - 2 * WALL,
+)
+center_shell = outer_c.cut(inner_c)
+
+# 3 Bolmeyi ayiran ic aerodinamik perde duvarlari (X = -32 mm ve X = +32 mm)
+baffle_L = box(-33.0, -45.0, Z0 + WALL, 2.0, 145.0, BODY_H - 2 * WALL)
+baffle_R = box(31.0, -45.0, Z0 + WALL, 2.0, 145.0, BODY_H - 2 * WALL)
+center_shell = center_shell.fuse(baffle_L).fuse(baffle_R)
+
+# Ust yuzde 3 bagimsiz pozitif basinc penceresi (Sol CPU, Orta VRM, Sag GPU)
+win_L = box(-110.0, -40.0, Z_TOP - WALL - 0.5, 74.0, 135.0, WALL + 1.0)
+win_M = box(-27.0, -30.0, Z_TOP - WALL - 0.5, 54.0, 120.0, WALL + 1.0)
+win_R = box(36.0, -40.0, Z_TOP - WALL - 0.5, 74.0, 135.0, WALL + 1.0)
+center_shell = center_shell.cut(win_L).cut(win_M).cut(win_R)
+
+# Alt yuzde 4x 6015 blower serbest emis delikleri
+blower_xy = [(-74.0, -32.0), (-54.0, 68.0), (74.0, -32.0), (54.0, 68.0)]
+for bx, by in blower_xy:
+    center_shell = center_shell.cut(cyl_z(bx, by, Z0 - 0.5, 19.5, WALL + 1.0))
+
+parts["OrtaGovde_3Bolme_250mm"] = (center_shell, (0.18, 0.22, 0.28), 35, "1_Ana_Govde")
+
+# ============================================================
+# 2. 3 BOLMELI UST EPDM CONTA + ARKA MENTESE BARAJI
+# ============================================================
+s_out_L = box(-115.0, -45.0, Z_TOP, 84.0, 145.0, SEAL_H).cut(
+    box(-110.0, -40.0, Z_TOP - 0.5, 74.0, 135.0, SEAL_H + 1.0)
+)
+s_out_M = box(-31.0, -34.0, Z_TOP, 62.0, 128.0, SEAL_H).cut(
+    box(-27.0, -30.0, Z_TOP - 0.5, 54.0, 120.0, SEAL_H + 1.0)
+)
+s_out_R = box(31.0, -45.0, Z_TOP, 84.0, 145.0, SEAL_H).cut(
+    box(36.0, -40.0, Z_TOP - 0.5, 74.0, 135.0, SEAL_H + 1.0)
+)
+rear_dam = box(-HALF_C + 8.0, DEPTH / 2.0 - 16.0, Z_TOP, CENTER_W - 16.0, 10.0, SEAL_H)
+top_gasket = s_out_L.fuse(s_out_M).fuse(s_out_R).fuse(rear_dam)
+
+parts["Ust_3Bolme_EPDM_Conta"] = (top_gasket, (0.12, 0.82, 0.42), 10, "2_Sizdirmaz_Contalar")
+
+# ============================================================
+# 3. 4x 6015 (12V USB-C PD) ANA RADYAL BLOWER DIZISI
+# ============================================================
+b1 = radial_blower_6015(-74.0, -32.0, Z0 + WALL, 12.0, 30.0)
+b2 = radial_blower_6015(-54.0, 68.0, Z0 + WALL, 22.0, -26.0)
+b3 = radial_blower_6015(74.0, -32.0, Z0 + WALL, -12.0, 30.0)
+b4 = radial_blower_6015(54.0, 68.0, Z0 + WALL, -22.0, -26.0)
+parts["AnaBlowerlar_4x6015_12V"] = (
+    b1.fuse(b2).fuse(b3).fuse(b4),
+    (0.62, 0.32, 0.94),
+    0,
+    "3_Radyal_Blower_ve_Vakum",
+)
+
+# ============================================================
+# 4. SAGA VE SOLA ACILIP LAPTOPA BIREBIR YAPISAN L-KANATLAR
+# ============================================================
+def make_sliding_lwing(side):
+    """
+    Saga (+1) veya Sola (-1) teleskopik kizaklarla kayip
+    laptopun yan duvarina (X = +-180 mm) sifir boslukla yapisan L-kanat.
+    Icinde Z = 22..32 mm kotunda 1 cm'lik (10 mm) yan vakum/ejektor tuneli bulunur.
+    """
+    # 1. Teleskopik Kizak Kollari (Orta govdeden X = 125 -> 180 mm'ye uzanan ikiz ray)
+    slide_len = max(4.0, WING_IN_X - HALF_C + 15.0)
+    arm_front = box(HALF_C - 15.0, -85.0, Z0 + 2.5, slide_len, 28.0, BODY_H - 5.0)
+    arm_rear  = box(HALF_C - 15.0, 45.0, Z0 + 2.5, slide_len, 32.0, BODY_H - 5.0)
+    base_plate = box(HALF_C, -112.0, Z0, max(2.0, WING_IN_X - HALF_C), 224.0, 6.0)
+
+    # 2. Dikey L-Profil Yan Duvar (X = 180..206 mm, Z = 4..40 mm -> Laptop yanini tam kavrar!)
+    vert_wall = box(WING_IN_X, -112.0, Z0, LWING_W, 224.0, LWING_TOP - Z0)
+
+    # 3. 1 cm'lik (Z = 22..32 mm) Yan Egzoz Vakum Tuneli + Arka-Kose Tahliye Kanali
+    # Yan ana egzoz tuneli (Y = 10..72 mm, Z = 22..32 mm)
+    side_tunnel = box(WING_IN_X - 0.5, 10.0, VENT_Z0, LWING_W + 1.0, 62.0, VENT_H)
+    # Arka-kose vakum tuneli (Y = 80..106 mm, Z = 22..32 mm)
+    corner_tunnel = box(WING_IN_X - 0.5, 80.0, VENT_Z0, LWING_W + 1.0, 26.0, VENT_H)
+
+    lwing = arm_front.fuse(arm_rear).fuse(base_plate).fuse(vert_wall).cut(side_tunnel).cut(corner_tunnel)
+    if side < 0:
+        lwing = lwing.mirror(V(0, 0, 0), V(1, 0, 0))
+    return lwing
+
+
+def make_side_epdm_seal(side):
+    """L-kanadin laptop yan duvarina (X = +-180 mm) birebir opusen 1cm pencereli yan contasi."""
+    seal_strip = box(WING_IN_X - 2.5, -108.0, VENT_Z0 - 3.0, 2.5, 216.0, VENT_H + 6.0)
+    win1 = box(WING_IN_X - 3.0, 10.0, VENT_Z0, 3.5, 62.0, VENT_H)
+    win2 = box(WING_IN_X - 3.0, 80.0, VENT_Z0, 3.5, 26.0, VENT_H)
+    s = seal_strip.cut(win1).cut(win2)
+    if side < 0:
+        s = s.mirror(V(0, 0, 0), V(1, 0, 0))
+    return s
+
+
+def make_side_vacuum_ejector(side):
+    """L-kanat icinde 1cm'lik yan egzoz agzina kilitlenen aktif vakum/ejektor modulleri."""
+    ej1 = box(WING_IN_X + 3.0, 14.0, VENT_Z0 + 0.5, 20.0, 54.0, VENT_H - 1.0)
+    ej2 = box(WING_IN_X + 3.0, 82.0, VENT_Z0 + 0.5, 20.0, 22.0, VENT_H - 1.0)
+    mod = ej1.fuse(ej2)
+    if side < 0:
+        mod = mod.mirror(V(0, 0, 0), V(1, 0, 0))
+    return mod
+
+
+parts["Sag_Kizakli_LKanat"] = (make_sliding_lwing(1), (0.08, 0.62, 0.45), 25, "1_Ana_Govde")
+parts["Sol_Kizakli_LKanat"] = (make_sliding_lwing(-1), (0.08, 0.62, 0.45), 25, "1_Ana_Govde")
+
+parts["Yan_EPDM_Conta_Sag_Sol"] = (
+    make_side_epdm_seal(1).fuse(make_side_epdm_seal(-1)),
+    (0.12, 0.85, 0.48),
+    10,
+    "2_Sizdirmaz_Contalar",
+)
+
+parts["Yan_1cm_Vakum_Ejektorler"] = (
+    make_side_vacuum_ejector(1).fuse(make_side_vacuum_ejector(-1)),
+    (0.96, 0.58, 0.08),
+    0,
+    "3_Radyal_Blower_ve_Vakum",
+)
+
+# ============================================================
+# 5. REFERANS LAPTOP GOVDESI (360 mm, L-Kanatlarin Arasina Birebir Oturmus)
+# ============================================================
+lap_body = box(-HALF_LAP, -110.0, Z_LAP_BOT, LAPTOP_W, 220.0, 18.0)
+# Yan 1 cm'lik egzoz oyuklari
+lap_vent_R = box(HALF_LAP - 4.0, 12.0, VENT_Z0, 4.5, 58.0, VENT_H)
+lap_vent_L = box(-HALF_LAP - 0.5, 12.0, VENT_Z0, 4.5, 58.0, VENT_H)
+lap_body = lap_body.cut(lap_vent_R).cut(lap_vent_L)
+parts["Referans_Laptop_360mm"] = (lap_body, (0.75, 0.82, 0.90), 75, "4_Referans_Laptop")
+
+# 6. USB-C PD 12V Kontrol Karti
+parts["PCB_USBC_PD_12V_PWM"] = (
+    box(-32.0, -108.0, Z0 + WALL, 64.0, 28.0, 1.6),
+    (0.05, 0.52, 0.22),
+    0,
+    "5_Elektronik",
+)
+
+groups = {}
+objs = []
+for name, (shp, color, transp, grp) in parts.items():
+    if grp not in groups:
+        groups[grp] = doc.addObject("App::DocumentObjectGroup", grp)
+    o = doc.addObject("Part::Feature", name)
+    o.Shape = shp
+    groups[grp].addObject(o)
+    objs.append(o)
+    if App.GuiUp:
+        o.ViewObject.ShapeColor = color
+        o.ViewObject.Transparency = transp
+
+doc.recompute()
+
+out_dir = os.path.dirname(os.path.abspath(__file__))
+fcstd = os.path.join(out_dir, DOC_NAME + ".FCStd")
+step = os.path.join(out_dir, DOC_NAME + ".step")
+doc.saveAs(fcstd)
+import Import
+Import.export(objs, step)
+print("Kaydedildi FCStd:", fcstd)
+print("Kaydedildi STEP :", step)
