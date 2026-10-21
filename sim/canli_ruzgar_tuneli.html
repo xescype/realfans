@@ -413,8 +413,8 @@
         ctx.fillStyle = 'rgba(34, 197, 94, 0.82)';
         ctx.fillRect(s0x, s0y, s1x - s0x, (s1y - s0y) * 0.65);
         ctx.fillStyle = '#86efac';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('Dikdörtgen EPDM Conta', s0x - 115, s0y + 14);
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('Dikdörtgen EPDM Conta', s0x - 135, s0y + 15);
       }
       if (state.hingeDam) {
         const [d0x, d0y] = mmToPx(173, zBot);
@@ -493,7 +493,7 @@
       ctx.font = 'bold 12px sans-serif';
       ctx.fillText(`LAPTOP (135W)  •  T_CPU: ${state.T_cpu.toFixed(1)} °C  •  Gerçekçi Kazanç: -${(90.6 - state.T_cpu).toFixed(1)} °C`, l0x + 12, (l0y + l1y) / 2 + 4);
       ctx.fillStyle = '#22d3ee';
-      ctx.font = '11px sans-serif';
+      ctx.font = '12px sans-serif';
       ctx.fillText(`Geniş Alt Izgara (${state.T_inlet.toFixed(1)}°C)`, ig0x - 4, ig0y - 6);
       ctx.fillStyle = '#fda4af';
       ctx.fillText(`Egzoz (${state.T_exh.toFixed(0)}°C)`, eg0x + 8, eg1y - 2);
