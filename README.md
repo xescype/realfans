@@ -31,6 +31,7 @@ iş ilk günden açıkta ilerlesin diye repo şimdiden public.
 | `ana_mantik.md` | mekanik, aerodinamik ve elektronik ana mimari |
 | `cad/` | freecad parametrik makroları (`.FCMacro`), `.FCStd` ve `.step` modelleri |
 | `sim/` | 2b/3b hava akışı-termal çözücü (`run_airflow_thermal_sim.py`) ve canlı rüzgar tüneli (`canli_ruzgar_tuneli.html`) |
+| `matlab/` | matlab p-q çalışma noktası, sağa-sola açılan l-kanat `ode45` termal çözücüsü (`run_all_realfans.m`) ve interaktif gui (`realfans_interactive_gui.m`) |
 | `realfans.kicad_pro` | kicad 10 projesi |
 | `realfans.kicad_sch` | şema (şimdilik boş) |
 | `realfans.kicad_pcb` | kart (şimdilik boş) |
