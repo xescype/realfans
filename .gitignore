@@ -8,10 +8,13 @@ fp-info-cache
 _autosave-*
 ~*
 
-# freecad ve simülasyon geçici dosyaları
+# freecad, matlab ve simülasyon geçici dosyaları
 *.FCBak
 *.FCStd1
 *.lock
+*.asv
+*.mex*
+slprj/
 **/meshCase/
 *.foam
 *.vtk
