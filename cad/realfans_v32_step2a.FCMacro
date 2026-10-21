@@ -1,0 +1,191 @@
+# -*- coding: utf-8 -*-
+"""
+RealFans v3.2A (Adim 2A) — 4x 5015 + 2 Eksenli (Saga-Sola & Ileri-Geri) Kayar Yan Fanli L-Kanat
+===============================================================================================
+Mimari Ozellikler (v3.2A):
+  1. 4x 5015 Radyal Blower + 3 Bagimsiz Bolme (Sol CPU + Orta VRM + Sag GPU):
+     - Boyut: 210 x 112 x 16.5 mm (388 cm^3, %70.6 Kuculme, 285 g agirlik).
+  2. 2 Eksenli (X + Y) Hareketli Yan L-Kanat:
+     - X Ekseni: Saga-sola teleskopik acilip laptop yanina 0 mm birebir yapisir.
+     - Y Ekseni: Yan atis fanlari 116 mm'lik L-ray uzerinde ileri-geri kayarak
+       her laptopun yan egzoz deligini tam yakalar.
+"""
+
+import os
+import FreeCAD as App
+import Part
+from FreeCAD import Vector as V
+
+LAPTOP_W    = 360.0
+SIDE_GAP    = 0.0
+CENTER_W    = 210.0
+DEPTH       = 112.0
+Y_START     = 6.0
+FOOT_H      = 2.5
+BODY_H      = 12.0
+SEAL_H      = 2.0
+WALL        = 1.3
+
+Z0          = FOOT_H
+Z_TOP       = Z0 + BODY_H
+Z_LAP_BOT   = Z_TOP + SEAL_H
+VENT_Z0     = 17.5
+VENT_H      = 10.0
+LWING_TOP   = 32.0
+
+RAIL_Y0     = 2.0
+RAIL_LEN    = 116.0
+POD_Y0      = 32.0
+POD_LEN     = 58.0
+POD_W       = 16.0
+
+HALF_C      = CENTER_W / 2.0
+HALF_LAP    = LAPTOP_W / 2.0
+WING_IN_X   = HALF_LAP + SIDE_GAP
+
+
+def box(x, y, z, w, d, h):
+    return Part.makeBox(w, d, h, V(x, y, z))
+
+
+def cyl_z(cx, cy, z, r, h):
+    return Part.makeCylinder(r, h, V(cx, cy, z), V(0, 0, 1))
+
+
+def blower_5015(cx, cy, z, out_dx, out_dy):
+    r_outer = 24.5
+    h_fan = 9.4
+    body = cyl_z(cx, cy, z, r_outer, h_fan)
+    intake = cyl_z(cx, cy, z - 0.5, 14.5, 2.2)
+    hub = cyl_z(cx, cy, z + 1.0, 9.5, h_fan - 2.0)
+    body = body.cut(intake).fuse(hub)
+    nx = cx + out_dx
+    ny = cy + out_dy
+    noz = box(
+        min(cx, nx) - 8.0,
+        min(cy, ny) - 8.0,
+        z + 0.8,
+        abs(out_dx) + 16.0,
+        abs(out_dy) + 16.0,
+        h_fan - 1.6,
+    )
+    return body.fuse(noz)
+
+
+DOC_NAME = "RealFans_v32_Step2A"
+if App.ActiveDocument and App.ActiveDocument.Name == DOC_NAME:
+    App.closeDocument(DOC_NAME)
+doc = App.newDocument(DOC_NAME)
+
+parts = {}
+
+outer_c = box(-HALF_C, Y_START, Z0, CENTER_W, DEPTH, BODY_H)
+inner_c = box(
+    -HALF_C + WALL,
+    Y_START + WALL,
+    Z0 + WALL,
+    CENTER_W - 2 * WALL,
+    DEPTH - 2 * WALL,
+    BODY_H - 2 * WALL,
+)
+center_shell = outer_c.cut(inner_c)
+
+baffle_L = box(-32.0, Y_START + WALL, Z0 + WALL, 1.6, DEPTH - 2 * WALL, BODY_H - 2 * WALL)
+baffle_R = box(30.4, Y_START + WALL, Z0 + WALL, 1.6, DEPTH - 2 * WALL, BODY_H - 2 * WALL)
+center_shell = center_shell.fuse(baffle_L).fuse(baffle_R)
+
+win_L = box(-98.0, 14.0, Z_TOP - WALL - 0.5, 62.0, 90.0, WALL + 1.0)
+win_M = box(-27.0, 16.0, Z_TOP - WALL - 0.5, 54.0, 86.0, WALL + 1.0)
+win_R = box(36.0, 14.0, Z_TOP - WALL - 0.5, 62.0, 90.0, WALL + 1.0)
+center_shell = center_shell.cut(win_L).cut(win_M).cut(win_R)
+
+blower_xy = [(-74.0, 36.0), (-26.0, 84.0), (74.0, 36.0), (26.0, 84.0)]
+for bx, by in blower_xy:
+    center_shell = center_shell.cut(cyl_z(bx, by, Z0 - 0.5, 15.0, WALL + 1.0))
+
+parts["OrtaGovde_4x5015_210x112"] = (center_shell, (0.18, 0.24, 0.32), 35, "1_Govde_v32A")
+
+s_out_L = box(-101.0, 11.0, Z_TOP, 68.0, 96.0, SEAL_H).cut(
+    box(-98.0, 14.0, Z_TOP - 0.5, 62.0, 90.0, SEAL_H + 1.0)
+)
+s_out_M = box(-30.0, 13.0, Z_TOP, 60.0, 92.0, SEAL_H).cut(
+    box(-27.0, 16.0, Z_TOP - 0.5, 54.0, 86.0, SEAL_H + 1.0)
+)
+s_out_R = box(33.0, 11.0, Z_TOP, 68.0, 96.0, SEAL_H).cut(
+    box(36.0, 14.0, Z_TOP - 0.5, 62.0, 90.0, SEAL_H + 1.0)
+)
+rear_dam = box(-HALF_C + 5.0, Y_START + DEPTH - 10.0, Z_TOP, CENTER_W - 10.0, 7.0, SEAL_H)
+parts["Ust_3Bolme_EPDM_Conta_v32A"] = (
+    s_out_L.fuse(s_out_M).fuse(s_out_R).fuse(rear_dam),
+    (0.12, 0.82, 0.42),
+    10,
+    "2_Contalar_v32A",
+)
+
+b1 = blower_5015(-74.0, 36.0, Z0 + WALL, 8.0, 20.0)
+b2 = blower_5015(-26.0, 84.0, Z0 + WALL, 12.0, -18.0)
+b3 = blower_5015(74.0, 36.0, Z0 + WALL, -8.0, 20.0)
+b4 = blower_5015(26.0, 84.0, Z0 + WALL, -12.0, -18.0)
+parts["BlowerDizisi_4x5015"] = (b1.fuse(b2).fuse(b3).fuse(b4), (0.62, 0.32, 0.94), 0, "3_Blower_ve_KayarVakum")
+
+
+def make_2axis_lwing_rail(side):
+    slide_len = max(4.0, WING_IN_X - HALF_C + 12.0)
+    x_arm = box(HALF_C - 12.0, 38.0, Z0 + 2.0, slide_len, 46.0, BODY_H - 4.0)
+    y_rail_base = box(WING_IN_X - 4.0, RAIL_Y0, Z0, 14.0, RAIL_LEN, 14.5)
+    y_rail_lip = box(WING_IN_X + 6.0, RAIL_Y0, Z0 + 14.5, 4.0, RAIL_LEN, 3.0)
+    rail = x_arm.fuse(y_rail_base).fuse(y_rail_lip)
+    if side < 0:
+        rail = rail.mirror(V(0, 0, 0), V(1, 0, 0))
+    return rail
+
+
+def make_sliding_ejector_carriage(side):
+    shell = box(WING_IN_X, POD_Y0, 14.5, POD_W, POD_LEN, LWING_TOP - 14.5)
+    tunnel = box(WING_IN_X - 0.5, POD_Y0 + 5.0, VENT_Z0, POD_W + 1.0, POD_LEN - 10.0, VENT_H)
+    carriage = shell.cut(tunnel)
+    fan_mod = box(WING_IN_X + 2.0, POD_Y0 + 7.0, VENT_Z0 + 0.5, POD_W - 3.5, POD_LEN - 14.0, VENT_H - 1.0)
+    if side < 0:
+        carriage = carriage.mirror(V(0, 0, 0), V(1, 0, 0))
+        fan_mod = fan_mod.mirror(V(0, 0, 0), V(1, 0, 0))
+    return carriage, fan_mod
+
+
+parts["SagaSola_Teleskopik_LRay_SagSol"] = (
+    make_2axis_lwing_rail(1).fuse(make_2axis_lwing_rail(-1)),
+    (0.28, 0.36, 0.46),
+    20,
+    "1_Govde_v32A",
+)
+r_car, r_fmod = make_sliding_ejector_carriage(1)
+l_car, l_fmod = make_sliding_ejector_carriage(-1)
+parts["IleriGeri_Kayar_LKanat_Arabasi"] = (r_car.fuse(l_car), (0.06, 0.72, 0.52), 20, "1_Govde_v32A")
+parts["IleriGeri_Kayar_YanAtisFani"] = (r_fmod.fuse(l_fmod), (0.98, 0.58, 0.08), 0, "3_Blower_ve_KayarVakum")
+
+lap_body = box(-HALF_LAP, -100.0, Z_LAP_BOT, LAPTOP_W, 220.0, 18.0)
+parts["Referans_Laptop_360mm"] = (lap_body, (0.75, 0.82, 0.90), 80, "4_Referans_Laptop")
+parts["PCB_USBC_PD_v32A"] = (box(-22.0, 8.0, Z0 + WALL, 44.0, 14.0, 1.6), (0.05, 0.52, 0.22), 0, "5_Elektronik")
+
+groups = {}
+objs = []
+for name, (shp, color, transp, grp) in parts.items():
+    if grp not in groups:
+        groups[grp] = doc.addObject("App::DocumentObjectGroup", grp)
+    o = doc.addObject("Part::Feature", name)
+    o.Shape = shp
+    groups[grp].addObject(o)
+    objs.append(o)
+    if App.GuiUp:
+        o.ViewObject.ShapeColor = color
+        o.ViewObject.Transparency = transp
+
+doc.recompute()
+
+out_dir = os.path.dirname(os.path.abspath(__file__))
+fcstd = os.path.join(out_dir, DOC_NAME + ".FCStd")
+step = os.path.join(out_dir, DOC_NAME + ".step")
+doc.saveAs(fcstd)
+import Import
+Import.export(objs, step)
+print("Kaydedildi FCStd:", fcstd)
+print("Kaydedildi STEP :", step)

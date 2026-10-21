@@ -1,0 +1,229 @@
+# -*- coding: utf-8 -*-
+"""
+RealFans v3.2B (Adim 2B) — 3x 5015 (Her Bolmeye 1 Fan) + 2 Eksenli (Saga-Sola & Ileri-Geri) L-Kanat
+===================================================================================================
+Mimari Ozellikler (v3.2B = Adim 2B Kompakt Govde + Adim 1A Ileri-Geri Kayar Yan Fan):
+  1. Tek Sira 3x 5015 Radyal Blower + 3 Bagimsiz Bolme (1 Fan = 1 Bolme: Sol CPU | Orta VRM | Sag GPU):
+     - Fanlar tek sira dizildigi icin on-arka derinlik 128 mm -> 108 mm'ye,
+       kapali genislik 230 mm -> 195 mm'ye, yukseklik 19 mm -> 16.5 mm'ye indi!
+     - Kapali Hacim: 347 cm^3 (%73.7 Kuculme, 245 g agirlik - Powerbank boyutu!).
+  2. 2 Eksenli (X + Y) Hareketli Yan L-Kanat ve Dışarı Atış Fanı:
+     - X Ekseni (Saga-Sola): Teleskopik kol 310..395 mm arasi her laptopa yandan 0 mm birebir yapisir.
+     - Y Ekseni (Ileri-Geri): L-kanat uzerindeki 118 mm'lik ince kizak rayi uzerinde
+       58 mm'lik Yan Vakum/Ejektor Arabasi ILERI-GERI kayarak her laptopun 1 cm'lik
+       yan egzoz deligiyle birebir hizalanir; diger kisimdaki USB/HDMI portlari acik birakir!
+"""
+
+import os
+import FreeCAD as App
+import Part
+from FreeCAD import Vector as V
+
+# ============================================================
+# ADIM 2B PARAMETRELER (mm)
+# ============================================================
+LAPTOP_W    = 360.0
+SIDE_GAP    = 0.0     # 0.0 mm = Birebir Yapisik!
+CENTER_W    = 195.0   # 230 mm -> 195 mm ultra kompakt genislik
+DEPTH       = 108.0   # 128 mm -> 108 mm tek sira 5015 derinligi
+Y_START     = 8.0     # Y = +8 mm .. +116 mm
+FOOT_H      = 2.5     # 2.5 mm ayak
+BODY_H      = 12.0    # 12.0 mm govde (5015 ic rotor/salyangoz gomulu)
+SEAL_H      = 2.0     # 2.0 mm EPDM conta -> Toplam yukseklik = 16.5 mm!
+WALL        = 1.3
+
+Z0          = FOOT_H
+Z_TOP       = Z0 + BODY_H       # 14.5 mm
+Z_LAP_BOT   = Z_TOP + SEAL_H    # 16.5 mm
+VENT_Z0     = 17.5              # Laptopun 1 cm'lik yan egzoz alt kotu
+VENT_H      = 10.0              # 1 cm (10 mm) yan egzoz acikligi (Z = 17.5..27.5 mm)
+LWING_TOP   = 32.0
+
+# Ileri-geri (Y ekseni) kayar yan ejektor arabasi parametreleri
+RAIL_Y0     = 2.0               # Yan L-ray baslangici (Y = 2..118 mm -> 116 mm ileri-geri ray!)
+RAIL_LEN    = 116.0
+POD_Y0      = 32.0              # Kayar yan fan arabasinin anlik Y konumu (2..60 mm arasi ileri-geri kayar)
+POD_LEN     = 58.0              # Sadece 58 mm boyunda kompakt yan vakum arabasi
+POD_W       = 16.0              # 16 mm ince yan profil
+
+HALF_C      = CENTER_W / 2.0    # 97.5 mm
+HALF_LAP    = LAPTOP_W / 2.0    # 180.0 mm
+WING_IN_X   = HALF_LAP + SIDE_GAP
+
+
+def box(x, y, z, w, d, h):
+    return Part.makeBox(w, d, h, V(x, y, z))
+
+
+def cyl_z(cx, cy, z, r, h):
+    return Part.makeCylinder(r, h, V(cx, cy, z), V(0, 0, 1))
+
+
+def blower_5015(cx, cy, z, out_dx, out_dy):
+    """50x50x10 mm kompakt radyal salyangoz blower."""
+    r_outer = 24.5
+    h_fan = 9.4
+    body = cyl_z(cx, cy, z, r_outer, h_fan)
+    intake = cyl_z(cx, cy, z - 0.5, 14.5, 2.2)
+    hub = cyl_z(cx, cy, z + 1.0, 9.5, h_fan - 2.0)
+    body = body.cut(intake).fuse(hub)
+    nx = cx + out_dx
+    ny = cy + out_dy
+    noz = box(
+        min(cx, nx) - 8.0,
+        min(cy, ny) - 8.0,
+        z + 0.8,
+        abs(out_dx) + 16.0,
+        abs(out_dy) + 16.0,
+        h_fan - 1.6,
+    )
+    return body.fuse(noz)
+
+
+DOC_NAME = "RealFans_v32_Step2B"
+if App.ActiveDocument and App.ActiveDocument.Name == DOC_NAME:
+    App.closeDocument(DOC_NAME)
+doc = App.newDocument(DOC_NAME)
+
+parts = {}
+
+# ============================================================
+# 1. TEK SIRA 3 BOLMELI ORTA GOVDE (195 x 108 x 12 mm)
+# ============================================================
+outer_c = box(-HALF_C, Y_START, Z0, CENTER_W, DEPTH, BODY_H)
+inner_c = box(
+    -HALF_C + WALL,
+    Y_START + WALL,
+    Z0 + WALL,
+    CENTER_W - 2 * WALL,
+    DEPTH - 2 * WALL,
+    BODY_H - 2 * WALL,
+)
+center_shell = outer_c.cut(inner_c)
+
+# 3 Bagimsiz Bolme Duvarlari (X = -31 mm ve X = +31 mm -> Her bolmede tam 1 adet 5015 fan!)
+baffle_L = box(-31.5, Y_START + WALL, Z0 + WALL, 1.6, DEPTH - 2 * WALL, BODY_H - 2 * WALL)
+baffle_R = box(29.9, Y_START + WALL, Z0 + WALL, 1.6, DEPTH - 2 * WALL, BODY_H - 2 * WALL)
+center_shell = center_shell.fuse(baffle_L).fuse(baffle_R)
+
+# Ust yuzde 3 bagimsiz pozitif basinc penceresi
+win_L = box(-91.0, 16.0, Z_TOP - WALL - 0.5, 56.0, 86.0, WALL + 1.0)
+win_M = box(-26.0, 18.0, Z_TOP - WALL - 0.5, 52.0, 82.0, WALL + 1.0)
+win_R = box(35.0, 16.0, Z_TOP - WALL - 0.5, 56.0, 86.0, WALL + 1.0)
+center_shell = center_shell.cut(win_L).cut(win_M).cut(win_R)
+
+# Alt yuzde 3x 5015 blower emis delikleri (Sol CPU, Orta VRM, Sag GPU)
+blower_xy = [(-63.0, 56.0), (0.0, 52.0), (63.0, 56.0)]
+for bx, by in blower_xy:
+    center_shell = center_shell.cut(cyl_z(bx, by, Z0 - 0.5, 15.0, WALL + 1.0))
+
+parts["OrtaGovde_3x5015_195x108"] = (center_shell, (0.18, 0.24, 0.32), 35, "1_Govde_v32B")
+
+# ============================================================
+# 2. 3 BOLMELI EPDM CONTA + ARKA MENTESE BARAJI
+# ============================================================
+s_out_L = box(-94.0, 13.0, Z_TOP, 62.0, 92.0, SEAL_H).cut(
+    box(-91.0, 16.0, Z_TOP - 0.5, 56.0, 86.0, SEAL_H + 1.0)
+)
+s_out_M = box(-29.0, 15.0, Z_TOP, 58.0, 88.0, SEAL_H).cut(
+    box(-26.0, 18.0, Z_TOP - 0.5, 52.0, 82.0, SEAL_H + 1.0)
+)
+s_out_R = box(32.0, 13.0, Z_TOP, 62.0, 92.0, SEAL_H).cut(
+    box(35.0, 16.0, Z_TOP - 0.5, 56.0, 86.0, SEAL_H + 1.0)
+)
+rear_dam = box(-HALF_C + 5.0, Y_START + DEPTH - 10.0, Z_TOP, CENTER_W - 10.0, 7.0, SEAL_H)
+parts["Ust_3Bolme_EPDM_Conta_v32B"] = (
+    s_out_L.fuse(s_out_M).fuse(s_out_R).fuse(rear_dam),
+    (0.12, 0.82, 0.42),
+    10,
+    "2_Contalar_v32B",
+)
+
+# ============================================================
+# 3. 3x 5015 RADYAL BLOWER (Her Bolmeye 1 Adet Bagimsiz Fan)
+# ============================================================
+b_cpu = blower_5015(-63.0, 56.0, Z0 + WALL, 0.0, 22.0)
+b_vrm = blower_5015(0.0, 52.0, Z0 + WALL, 0.0, 24.0)
+b_gpu = blower_5015(63.0, 56.0, Z0 + WALL, 0.0, 22.0)
+parts["BlowerDizisi_3x5015"] = (b_cpu.fuse(b_vrm).fuse(b_gpu), (0.62, 0.32, 0.94), 0, "3_Blower_ve_KayarVakum")
+
+# ============================================================
+# 4. SAGA-SOLA ACILAN L-RAY + ILERI-GERI KAYAR YAN EJEKTOR ARABASI
+# ============================================================
+def make_2axis_lwing_rail(side):
+    """
+    X ekseninde saga-sola acilan teleskopik kol +
+    Y ekseninde (Y = 2..118 mm) uzanan ince L-kizak rayi.
+    Alçak profili sayesinde yan USB/HDMI portlarini kapatmaz!
+    """
+    slide_len = max(4.0, WING_IN_X - HALF_C + 12.0)
+    x_arm = box(HALF_C - 12.0, 38.0, Z0 + 2.0, slide_len, 46.0, BODY_H - 4.0)
+
+    # Laptopun alt-yan kosesine oturan ince L-Ray (Z = 2.5..17.0 mm, portlarin altinda kalir!)
+    y_rail_base = box(WING_IN_X - 4.0, RAIL_Y0, Z0, 14.0, RAIL_LEN, 14.5)
+    # Dikey T-ray klavuzu (Kayar yan fan arabasinin uzerinde ileri-geri kaydigi kanal)
+    y_rail_lip = box(WING_IN_X + 6.0, RAIL_Y0, Z0 + 14.5, 4.0, RAIL_LEN, 3.0)
+
+    rail = x_arm.fuse(y_rail_base).fuse(y_rail_lip)
+    if side < 0:
+        rail = rail.mirror(V(0, 0, 0), V(1, 0, 0))
+    return rail
+
+
+def make_sliding_ejector_carriage(side):
+    """
+    L-ray uzerinde ILERI-GERI (Y ekseninde) kayabilen 58 mm'lik
+    kompakt Yan Vakum / Dışarı Atış Fan Arabası + 1 cm EPDM Yan Conta!
+    """
+    # Kayar dis kovan (Z = 14.5..32.0 mm, sadece egzoz deligi hizasinda yukselir)
+    shell = box(WING_IN_X, POD_Y0, 14.5, POD_W, POD_LEN, LWING_TOP - 14.5)
+    tunnel = box(WING_IN_X - 0.5, POD_Y0 + 5.0, VENT_Z0, POD_W + 1.0, POD_LEN - 10.0, VENT_H)
+    carriage = shell.cut(tunnel)
+
+    # Icindeki 4010/5010 yuksek emişli yan ejektor blower modulu
+    fan_mod = box(WING_IN_X + 2.0, POD_Y0 + 7.0, VENT_Z0 + 0.5, POD_W - 3.5, POD_LEN - 14.0, VENT_H - 1.0)
+    if side < 0:
+        carriage = carriage.mirror(V(0, 0, 0), V(1, 0, 0))
+        fan_mod = fan_mod.mirror(V(0, 0, 0), V(1, 0, 0))
+    return carriage, fan_mod
+
+
+r_rail = make_2axis_lwing_rail(1)
+l_rail = make_2axis_lwing_rail(-1)
+parts["SagaSola_Teleskopik_LRay_SagSol"] = (r_rail.fuse(l_rail), (0.28, 0.36, 0.46), 20, "1_Govde_v32B")
+
+r_car, r_fmod = make_sliding_ejector_carriage(1)
+l_car, l_fmod = make_sliding_ejector_carriage(-1)
+parts["IleriGeri_Kayar_LKanat_Arabasi"] = (r_car.fuse(l_car), (0.06, 0.72, 0.52), 20, "1_Govde_v32B")
+parts["IleriGeri_Kayar_YanAtisFani"] = (r_fmod.fuse(l_fmod), (0.98, 0.58, 0.08), 0, "3_Blower_ve_KayarVakum")
+
+# 5. Referans Laptop (360 mm)
+lap_body = box(-HALF_LAP, -100.0, Z_LAP_BOT, LAPTOP_W, 220.0, 18.0)
+parts["Referans_Laptop_360mm"] = (lap_body, (0.75, 0.82, 0.90), 80, "4_Referans_Laptop")
+
+# 6. Kompakt USB-C PD 12V Kontrol Karti
+parts["PCB_USBC_PD_v32B"] = (box(-22.0, 10.0, Z0 + WALL, 44.0, 14.0, 1.6), (0.05, 0.52, 0.22), 0, "5_Elektronik")
+
+groups = {}
+objs = []
+for name, (shp, color, transp, grp) in parts.items():
+    if grp not in groups:
+        groups[grp] = doc.addObject("App::DocumentObjectGroup", grp)
+    o = doc.addObject("Part::Feature", name)
+    o.Shape = shp
+    groups[grp].addObject(o)
+    objs.append(o)
+    if App.GuiUp:
+        o.ViewObject.ShapeColor = color
+        o.ViewObject.Transparency = transp
+
+doc.recompute()
+
+out_dir = os.path.dirname(os.path.abspath(__file__))
+fcstd = os.path.join(out_dir, DOC_NAME + ".FCStd")
+step = os.path.join(out_dir, DOC_NAME + ".step")
+doc.saveAs(fcstd)
+import Import
+Import.export(objs, step)
+print("Kaydedildi FCStd:", fcstd)
+print("Kaydedildi STEP :", step)
