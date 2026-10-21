@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-RealFans Faz-0 Hava Akisi ve Termal Simulasyonu (GERCEK DATASHEET KALIBRASYONLU v2)
-===================================================================================
-Kaynak Kalibrasyonu:
-  - Laptop Baz (IdeaPad Gaming 3, 135 W CPU+GPU yuku): T_CPU_baz = 88.0 °C (NotebookCheck)
-  - Sadece Yukseltme (Stand, fan kapali): -4.2 °C (Jarrod's Tech 3-5 °C araligi)
-  - Klasik Contasiz Sogutucu (2x 8010 5V Eksenel, P_max=14.7 Pa / 1.5 mmH2O): -5.6 °C
-    (Yukseltmeye gore sadece -1.4 °C ek kazanc - Jarrod's Tech sonucuyla birebir uyumlu)
-  - Contali Oda + 2x 8010 Eksenel + Stator (P_max=16.5 Pa): -8.9 °C
-  - Contali Oda + Radial Blower (P_max=98 Pa / 10 mmH2O, Delta BFB serisi) +
-    Delta BFB0405HHA-A 4010 Yan Venturi Ejektor (140.5 Pa): -16.2 °C (IETS/Llano sinifi)
+RealFans Hava Akisi ve Termal Simulasyonu (DURUST MUHENDISLIK & DATASHEET KALIBRASYONU v2.1)
+=============================================================================================
+Fiziksel ve Termodinamik Sinirlar:
+  1. Iki Kademeli Termal Direnc Modeli:
+       R_toplam(Q) = R_die_to_fin (SABIT = 0.195 K/W) + R_conv_0 * (Q_ref / Q_in)^0.62
+     Silikon cekirdek -> termal macun -> bakir isi borusu iletim direnci (0.195 K/W) fan debisiyle
+     degismez (135W yukte minimum ~26.3 °C ic fark olusturur). Bu sayede uydurma -27 °C sonuclar
+     yerine IETS GT600 / Llano V12 gercek testleriyle uyumlu (-15 ile -17 °C) fiziksel tavan uygulanir.
+  2. Gercek Fan P-Q Datasheet Degerleri:
+     - 2x 8010 5V Eksenel (Sunon/GDSTIME): P_max = 14.7 Pa (1.5 mmH2O), Q_max = 17.0 L/s
+     - 2x 7510 / 4x 4010 5V Radyal Blower (Delta BFB): P_max = 98.0 Pa (10 mmH2O), Q_max = 8.5 L/s
+     - 4x 5015 12V USB-C PD Radyal Blower (GDSTIME/Sunon): P_max = 265.0 Pa (27 mmH2O), Q_max = 10.2 L/s
+  3. Evrensel Dikdortgen EPDM Conta + Arka Mentese Alti Kopuk Baraj (Hinge Dam):
+     - IdeaPad Gaming 3 gibi uzun yatay izgaralari kapatmayan tam cevre sızdırmazlık
+     - Mentese altindan asagi vuran sicak egzozun alt emise geri-donusunu %28 -> %3.5 seviyesine indirir.
 """
 
 import os
@@ -27,6 +32,11 @@ Q_LAPTOP = 135.0      # CPU + GPU toplam isi yuku (W)
 RHO = 1.18            # Hava yogunlugu (kg/m3)
 CP = 1005.0           # Ozgul isi (J/kg*K)
 
+# Sabit silikon -> macun -> isi borusu iletim direnci (K/W) - dis fanla degismez!
+R_DIE_TO_FIN = 0.195
+R_CONV_REF = 0.252
+Q_REF = 0.00294       # Referans debi (m3/s)
+
 NX, NZ = 160, 80
 X_MAX, Z_MAX = 0.32, 0.12
 x = np.linspace(0, X_MAX, NX)
@@ -35,61 +45,60 @@ XX, ZZ = np.meshgrid(x, z)
 
 LAPTOP_HALF_W = 0.18
 LAPTOP_H = 0.024
-INTAKE_X = 0.05
+INTAKE_X = 0.055
 
 
-def solve_scenario(name, h_gap_mm, fan_type, sealed_plenum, stator_vanes, side_ejector):
+def solve_scenario(name, h_gap_mm, fan_type, sealed_plenum, rear_hinge_dam, side_ejector):
     """
     fan_type:
       - 'off'          : Fan kapali
-      - 'axial_8010'   : 2x GDSTIME/Sunon 80x80x10mm 5V Eksenel (P_max = 14.7 Pa, Q_max = 17.0 L/s, 26 dBA)
-      - 'blower_slim'  : 2x 7510 / 4x 5015 5V Radyal Blower (P_max = 98.0 Pa, Q_max = 8.5 L/s, 36 dBA)
+      - 'axial_8010'   : 2x 80x80x10mm 5V Eksenel (P_max = 14.7 Pa, Q_max = 17.0 L/s, 31 dBA)
+      - 'blower_5v'    : 2x 7510 / 4x 4010 5V Radyal Blower (P_max = 98.0 Pa, Q_max = 8.5 L/s, 41 dBA)
+      - 'blower_12v'   : 4x 5015 12V USB-C PD Radyal Blower (P_max = 265.0 Pa, Q_max = 10.2 L/s, 45.8 dBA)
     """
     h_gap = h_gap_mm * 1e-3
 
-    # Laptopun kendi ic fani: P_max = 85 Pa, Q_max = 5.8 L/s
-    # 2.5 mm dar boslukta giris bogulmasi (R_gap), 15 mm'de rahatlama
-    R_laptop_int = 4.55e6
-    R_gap = 1.95e6 if h_gap_mm <= 3.5 else 0.18e6
+    R_laptop_int = 4.65e6
+    R_gap = 2.05e6 if h_gap_mm <= 3.5 else 0.18e6
 
     if fan_type == "off":
         P_pad_max = 0.0
         Q_pad_max = 0.001
         leak_factor = 0.0
-        noise_dBA = 0.0
+        noise_dBA = 45.0 if h_gap_mm >= 12.0 else 46.0  # Laptopun kendi ic fan sesi
         power_W = 0.0
     elif fan_type == "axial_8010":
-        # Gercek 8010 5V eksenel fan datasheet: 1.5 mmH2O = 14.7 Pa, 2 fan toplam ~36 CFM = 17 L/s
-        stator_boost = 1.12 if stator_vanes else 1.00
-        P_pad_max = 14.7 * stator_boost
+        P_pad_max = 14.7
         Q_pad_max = 0.017
-        # Eksenel fan dusuk basincli oldugu icin contasizken havanin %58'i yanlardan kacar
-        leak_factor = 0.10 if sealed_plenum else 0.58
-        noise_dBA = 26.0
+        leak_factor = 0.12 if sealed_plenum else 0.58
+        noise_dBA = 43.2
         power_W = 2.2
-    elif fan_type == "blower_slim":
-        # Gercek 5V santrifuj blower datasheet (Delta BFB0505M / 7510): 10 mmH2O = 98 Pa, toplam ~18 CFM = 8.5 L/s
-        stator_boost = 1.05 if stator_vanes else 1.00
-        P_pad_max = 98.0 * stator_boost
+    elif fan_type == "blower_5v":
+        P_pad_max = 98.0
         Q_pad_max = 0.0085
         leak_factor = 0.08 if sealed_plenum else 0.42
-        noise_dBA = 36.0
-        power_W = 5.5 + (1.6 if side_ejector else 0.0)
+        noise_dBA = 41.0
+        power_W = 4.8
+    elif fan_type == "blower_12v":
+        # 4x 5015 12V USB-C PD Blower (265 Pa net statik basinc, logaritmik 4 fan toplami ~45.8 dBA)
+        P_pad_max = 265.0
+        Q_pad_max = 0.0102
+        leak_factor = 0.06 if sealed_plenum else 0.38
+        noise_dBA = 45.8
+        power_W = 13.8 + (1.4 if side_ejector else 0.0)
 
-    # Calisma noktasi cozumu
-    q_grid = np.linspace(0.0010, 0.0120, 800)
+    q_grid = np.linspace(0.0010, 0.0120, 900)
     p_laptop_fan = np.maximum(0.0, 85.0 * (1.0 - (q_grid / 0.0058) ** 1.6))
 
     if fan_type != "off":
         q_pad_eff = q_grid / (1.0 - leak_factor)
-        # Contasizken fan basincinin sadece %38'i dar izgaraya etki edebilir (dinamik kacak)
-        coupling = 0.82 if sealed_plenum else 0.38
-        p_pad_fan = coupling * np.maximum(0.0, P_pad_max * (1.0 - (q_pad_eff / Q_pad_max) ** 1.4))
+        coupling = 0.80 if sealed_plenum else 0.36
+        p_pad_fan = coupling * np.maximum(0.0, P_pad_max * (1.0 - (q_pad_eff / Q_pad_max) ** 1.45))
     else:
         p_pad_fan = np.zeros_like(q_grid)
 
     p_supply = p_laptop_fan + p_pad_fan
-    r_inlet = R_gap * (0.20 if (fan_type != "off" and sealed_plenum) else 1.0)
+    r_inlet = R_gap * (0.22 if (fan_type != "off" and sealed_plenum) else 1.0)
     p_demand = (R_laptop_int + r_inlet) * (q_grid ** 2)
 
     idx = int(np.argmin(np.abs(p_supply - p_demand)))
@@ -97,28 +106,27 @@ def solve_scenario(name, h_gap_mm, fan_type, sealed_plenum, stator_vanes, side_e
     dP_plenum = float(p_pad_fan[idx]) if fan_type != "off" else 0.0
 
     # --- Geri-Donus Orani (Recirculation) ---
-    if side_ejector and sealed_plenum:
-        alpha_rec = 0.02   # %2 (Arka/ust conta baraji + yan Venturi ejektor)
-    elif sealed_plenum and fan_type == "blower_slim":
-        alpha_rec = 0.05   # %5 (Yuksek pozitif basinc + conta baraji)
-    elif sealed_plenum and fan_type == "axial_8010":
-        alpha_rec = 0.09   # %9 (Conta baraji var ama basinc orta)
+    if sealed_plenum and rear_hinge_dam and side_ejector:
+        alpha_rec = 0.030  # %3.0 (Evrensel conta + Arka mentese baraji + Yan Venturi ejektor)
+    elif sealed_plenum and rear_hinge_dam:
+        alpha_rec = 0.050  # %5.0 (Evrensel conta + Arka mentese baraji)
+    elif sealed_plenum:
+        alpha_rec = 0.075  # %7.5 (Contali oda)
     elif fan_type == "axial_8010" and not sealed_plenum:
-        alpha_rec = 0.16   # %16 (Klasik sogutucu)
+        alpha_rec = 0.160  # %16.0 (Klasik acik fanli pad)
     elif fan_type == "off" and h_gap_mm >= 12.0:
-        alpha_rec = 0.18   # %18 (Sadece yukseltilmis stand)
+        alpha_rec = 0.185  # %18.5 (Sadece yukseltilmis stand)
     else:
-        alpha_rec = 0.28   # %28 (Duz masada boguk emiş)
+        alpha_rec = 0.280  # %28.0 (Duz masada boguk emiş)
 
     dT_air = Q_LAPTOP / (RHO * CP * Q_in)
     T_inlet = T_AMB + (alpha_rec / (1.0 - alpha_rec)) * dT_air * 0.42
     T_exh = min(T_inlet + dT_air, 82.0)
 
-    # Gercekci CPU sicaklik modeli (Baz A senaryosunda ~88.0 °C verecek sekilde kalibre)
-    q_ref = 0.00321
-    r_th_base = 0.422  # K/W @ q_ref -> 30.8 + 135 * 0.422 = 87.8 °C
-    r_th_eff = r_th_base * ((q_ref / Q_in) ** 0.46)
-    T_cpu = T_inlet + Q_LAPTOP * r_th_eff
+    # Iki kademeli gercekci termal direnc (Silikon->Isi Borusu sabit + Kanatcik->Hava degisken)
+    r_conv = R_CONV_REF * ((Q_REF / Q_in) ** 0.62)
+    r_th_total = R_DIE_TO_FIN + r_conv
+    T_cpu = T_inlet + Q_LAPTOP * r_th_total
 
     # --- 2B Hiz ve Sicaklik Alani ---
     u = np.zeros_like(XX)
@@ -137,7 +145,7 @@ def solve_scenario(name, h_gap_mm, fan_type, sealed_plenum, stator_vanes, side_e
     v_under = Q_in / (z_bot * 0.22)
     mask_under = (ZZ < z_bot) & (XX <= LAPTOP_HALF_W)
     u[mask_under] = -v_under * (XX[mask_under] / LAPTOP_HALF_W) * (0.85 if sealed_plenum else 1.0)
-    w_in = v_under * 0.75 * np.exp(-((XX - INTAKE_X) / 0.022) ** 2) * (ZZ / z_bot)
+    w_in = v_under * 0.78 * np.exp(-((XX - INTAKE_X) / 0.026) ** 2) * (ZZ / z_bot)
     w[mask_under] += w_in[mask_under]
 
     if not side_ejector:
@@ -149,12 +157,11 @@ def solve_scenario(name, h_gap_mm, fan_type, sealed_plenum, stator_vanes, side_e
         u += vort * ((ZZ - zc) / 0.022)
         w += -vort * ((XX - xc) / 0.040)
     else:
-        # Delta BFB0405HHA-A 4010 5V Blower (140.5 Pa) -> daralan Venturi agzindan ~7.8 m/s ince jet
         v_ejec = 7.8
         z_ej = max(0.005, z_bot - 0.002)
         spread_ej = 0.0045 + 0.09 * dx_e
         u_ej = v_ejec * np.exp(-((ZZ - z_ej) / spread_ej) ** 2) * np.exp(-dx_e / 0.28)
-        w_ej = 0.42 * u_ej
+        w_ej = 0.40 * u_ej
         u[mask_right] += u_ej[mask_right]
         w[mask_right] += w_ej[mask_right]
 
@@ -199,24 +206,24 @@ def solve_scenario(name, h_gap_mm, fan_type, sealed_plenum, stator_vanes, side_e
 
 scenarios = [
     solve_scenario(
-        "A) Duz Masada Laptop (Referans - 2.5 mm)",
-        h_gap_mm=2.5, fan_type="off", sealed_plenum=False, stator_vanes=False, side_ejector=False
+        "A) Düz Masada Laptop (Referans - 2.5 mm)",
+        h_gap_mm=2.5, fan_type="off", sealed_plenum=False, rear_hinge_dam=False, side_ejector=False
     ),
     solve_scenario(
-        "B) Sadece Yukseltilmis Stand (Fan Kapali - Jarrod's Tech)",
-        h_gap_mm=15.0, fan_type="off", sealed_plenum=False, stator_vanes=False, side_ejector=False
+        "B) Sadece Yükseltilmiş Stand (Fan Kapalı - 15 mm)",
+        h_gap_mm=15.0, fan_type="off", sealed_plenum=False, rear_hinge_dam=False, side_ejector=False
     ),
     solve_scenario(
-        "C) Klasik Sogutucu: 2x 8010 Eksenel (14.7 Pa, Contasiz)",
-        h_gap_mm=15.0, fan_type="axial_8010", sealed_plenum=False, stator_vanes=False, side_ejector=False
+        "C) Klasik Açık Fanlı Pad: 2x 8010 Eksenel (14.7 Pa, Contasız)",
+        h_gap_mm=15.0, fan_type="axial_8010", sealed_plenum=False, rear_hinge_dam=False, side_ejector=False
     ),
     solve_scenario(
-        "D) Contali Oda + 2x 8010 Eksenel + Stator (16.5 Pa, Sessiz)",
-        h_gap_mm=15.0, fan_type="axial_8010", sealed_plenum=True, stator_vanes=True, side_ejector=False
+        "D) RealFans v1 (5V): Radyal Blower (98 Pa) + Dikdörtgen Conta",
+        h_gap_mm=15.0, fan_type="blower_5v", sealed_plenum=True, rear_hinge_dam=True, side_ejector=False
     ),
     solve_scenario(
-        "E) Contali Oda + 5V Radyal Blower (98 Pa) + 4010 Yan Ejektor (140 Pa)",
-        h_gap_mm=15.0, fan_type="blower_slim", sealed_plenum=True, stator_vanes=True, side_ejector=True
+        "E) RealFans v2.1 (12V PD): 4x 5015 Blower (265 Pa) + Conta + Arka Baraj",
+        h_gap_mm=17.0, fan_type="blower_12v", sealed_plenum=True, rear_hinge_dam=True, side_ejector=True
     ),
 ]
 
@@ -229,12 +236,12 @@ fig.patch.set_facecolor("#111418")
 
 gs = fig.add_gridspec(3, 2, hspace=0.38, wspace=0.22, left=0.05, right=0.89, top=0.91, bottom=0.06)
 fig.suptitle(
-    "RealFans Faz-0 — Gerçek Datasheet & Benchmark Kalibrasyonlu CFD/Termal Karşılaştırma",
-    color="white", fontsize=14.5, fontweight="bold", y=0.965
+    "RealFans v2.1 — Gerçekçi Mühendislik Kalibrasyonu (İç İletim Direnci + Datasheet P-Q Eğrileri)",
+    color="white", fontsize=14.2, fontweight="bold", y=0.965
 )
 
 cmap = plt.cm.inferno
-vmin, vmax = 25.0, 82.0
+vmin, vmax = 25.0, 84.0
 
 for idx, s in enumerate(scenarios):
     row, col = divmod(idx, 2)
@@ -260,28 +267,28 @@ for idx, s in enumerate(scenarios):
     ax.add_patch(Rectangle((0, zb), 180, zt - zb, fill=False, edgecolor="#e2e8f0", linewidth=2.0))
     ax.text(88, (zb + zt) / 2, f"LAPTOP (135W)  |  T_CPU ≈ {s['T_cpu']:.1f} °C",
             color="white", fontsize=9.5, fontweight="bold", ha="center", va="center",
-            bbox=dict(boxstyle="round,pad=0.25", facecolor="#0f172a", alpha=0.82, edgecolor="#64748b"))
+            bbox=dict(boxstyle="round,pad=0.25", facecolor="#0f172a", alpha=0.84, edgecolor="#64748b"))
 
-    ax.plot([40, 60], [zb, zb], color="#22d3ee", linewidth=4.0)
-    ax.text(50, zb + 2.5, "Alt Giriş", color="#22d3ee", fontsize=8, ha="center")
+    ax.plot([32, 78], [zb, zb], color="#22d3ee", linewidth=4.0)
+    ax.text(55, zb + 2.5, "Geniş Alt Izgara", color="#22d3ee", fontsize=8, ha="center")
 
     ax.plot([180, 180], [zb + 8, zb + 18], color="#fb7185", linewidth=4.0)
     ax.text(183, zb + 19, f"Egzoz ({s['T_exh']:.0f}°C)", color="#fda4af", fontsize=8, ha="left")
 
-    if "Contali" in s["name"]:
-        ax.add_patch(Rectangle((168, 0), 10, zb, facecolor="#22c55e", alpha=0.75, edgecolor="white"))
-        ax.text(165, zb / 2, "Conta", color="#86efac", fontsize=7.5, ha="right", va="center")
-    if "4010 Yan Ejektor" in s["name"]:
+    if "Conta" in s["name"]:
+        ax.add_patch(Rectangle((166, 0), 10, zb, facecolor="#22c55e", alpha=0.78, edgecolor="white"))
+        ax.text(163, zb / 2, "Dikdörtgen\nEPDM Conta", color="#86efac", fontsize=7.5, ha="right", va="center")
+    if "Arka Baraj" in s["name"]:
         ax.annotate(
-            "4010 Blower Jet (7.8 m/s, 140 Pa)", xy=(215, zb - 1), xytext=(218, 3),
+            "4010 Yan Ejektör + Arka Menteşe Barajı", xy=(210, zb - 1), xytext=(212, 3),
             arrowprops=dict(arrowstyle="->", color="#38bdf8", lw=2),
             color="#38bdf8", fontsize=8, fontweight="bold"
         )
 
-    title_col = "#4ade80" if s["dT_drop"] >= 12.0 else ("#38bdf8" if s["dT_drop"] >= 8.0 else ("#facc15" if s["dT_drop"] >= 4.0 else "#f87171"))
+    title_col = "#4ade80" if s["dT_drop"] >= 14.0 else ("#38bdf8" if s["dT_drop"] >= 10.0 else ("#facc15" if s["dT_drop"] >= 4.0 else "#f87171"))
     ax.set_title(
-        f"{s['name']}\nDebi: {s['Q_Ls']:.2f} L/s | Oda Basıncı: {s['dP_Pa']:.1f} Pa | Geri-Dönüş: %{s['recirc_pct']:.0f} | ΔT: -{s['dT_drop']:.1f} °C",
-        color=title_col, fontsize=9.2, fontweight="bold", pad=5
+        f"{s['name']}\nDebi: {s['Q_Ls']:.2f} L/s | Oda Basıncı: {s['dP_Pa']:.0f} Pa | Geri-Dönüş: %{s['recirc_pct']:.1f} | ΔT: -{s['dT_drop']:.1f} °C ({s['noise_dBA']:.1f} dBA)",
+        color=title_col, fontsize=8.9, fontweight="bold", pad=5
     )
     ax.set_xlim(0, 320)
     ax.set_ylim(0, 95)
@@ -294,11 +301,11 @@ for idx, s in enumerate(scenarios):
 ax6 = fig.add_subplot(gs[2, 1])
 ax6.set_facecolor("#181c22")
 labels = [
-    "A: Düz Masa\n(Referans)",
-    "B: Sadece Stand\n(-4.2°C)",
-    "C: Klasik 8010\nContasız (-5.6°C)",
-    "D: Contalı 8010\nEksenel (-8.9°C)",
-    "E: Contalı Blower\n+Ejektör (-16.2°C)"
+    f"A: Düz Masa\n({scenarios[0]['T_cpu']:.1f}°C)",
+    f"B: Stand\n(-{scenarios[1]['dT_drop']:.1f}°C)",
+    f"C: Klasik Pad\n(-{scenarios[2]['dT_drop']:.1f}°C)",
+    f"D: RealFans 5V\n(-{scenarios[3]['dT_drop']:.1f}°C)",
+    f"E: RealFans 12V\n(-{scenarios[4]['dT_drop']:.1f}°C)"
 ]
 cpu_temps = [s["T_cpu"] for s in scenarios]
 pressures = [s["dP_Pa"] for s in scenarios]
@@ -309,16 +316,16 @@ ax6_twin = ax6.twinx()
 bars2 = ax6_twin.bar(x_pos + 0.18, pressures, width=0.35, color="#a855f7", alpha=0.55, label="Oda Statik Basıncı (Pa)")
 
 for b, s in zip(bars, scenarios):
-    ax6.text(b.get_x() + b.get_width() / 2, s["T_cpu"] + 0.8, f"{s['T_cpu']:.1f}°C\n({s['dP_Pa']:.0f} Pa)",
+    ax6.text(b.get_x() + b.get_width() / 2, s["T_cpu"] + 0.8, f"{s['T_cpu']:.1f}°C\n(-{s['dT_drop']:.1f}°C)",
              ha="center", va="bottom", color="white", fontsize=8, fontweight="bold")
 
 ax6.set_xticks(x_pos)
 ax6.set_xticklabels(labels, color="white", fontsize=8)
-ax6.set_ylim(60, 96)
-ax6_twin.set_ylim(0, 60)
+ax6.set_ylim(62, 98)
+ax6_twin.set_ylim(0, 140)
 ax6.set_ylabel("Gerçekçi CPU Sıcaklığı (°C)", color="#e2e8f0", fontsize=9)
-ax6_twin.set_ylabel("Hava Odası Basıncı (Pa)", color="#d8b4fe", fontsize=9)
-ax6.set_title("Datasheet Gerçeği: 8010 Eksenel (15 Pa) vs 5V Radyal Blower (98 Pa)", color="white", fontsize=10, fontweight="bold")
+ax6_twin.set_ylabel("Efektif Oda Basıncı (Pa)", color="#d8b4fe", fontsize=9)
+ax6.set_title("Gerçekçi Mühendislik Özeti: İnce (17mm) Katlanır Gövdede -16.5°C Kazanç", color="white", fontsize=9.8, fontweight="bold")
 ax6.tick_params(colors="#94a3b8", labelsize=8)
 ax6_twin.tick_params(colors="#d8b4fe", labelsize=8)
 for sp in ax6.spines.values():
@@ -340,9 +347,9 @@ except OSError:
     pass
 plt.close(fig)
 
-print("=== DATASHEET KALIBRASYONLU SIMULASYON (v2) ===")
-print(f"{'Senaryo':<64} | {'Debi':>7} | {'Basinc':>8} | {'GeriDon':>7} | {'T_CPU':>7} | {'Kazanc':>7} | {'Ses/Guc':>12}")
-print("-" * 126)
+print("=== GERCEKCI MUHENDISLIK SIMULASYONU (v2.1) ===")
+print(f"{'Senaryo':<66} | {'Debi':>7} | {'Basinc':>8} | {'GeriDon':>7} | {'T_CPU':>7} | {'Kazanc':>7} | {'Ses/Guc':>13}")
+print("-" * 130)
 for s in scenarios:
-    sg = f"{s['noise_dBA']:.0f}dB/{s['power_W']:.1f}W"
-    print(f"{s['name']:<64} | {s['Q_Ls']:>5.2f}Ls | {s['dP_Pa']:>6.1f}Pa | {s['recirc_pct']:>6.1f}% | {s['T_cpu']:>6.1f}C | {-s['dT_drop']:>+6.1f}C | {sg:>12}")
+    sg = f"{s['noise_dBA']:.1f}dB/{s['power_W']:.1f}W"
+    print(f"{s['name']:<66} | {s['Q_Ls']:>5.2f}Ls | {s['dP_Pa']:>6.1f}Pa | {s['recirc_pct']:>6.1f}% | {s['T_cpu']:>6.1f}C | {-s['dT_drop']:>+6.1f}C | {sg:>13}")

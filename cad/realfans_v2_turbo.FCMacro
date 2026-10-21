@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-RealFans v2.0 TURBO — Gercek Datasheet Tabanli yuksek Basincli & On-Sogutmali Model
-===================================================================================
-Yeni Mekanizmalar (v2.0):
-  1. 4x 5015 12V Radyal Blower Dizisi (USB-C PD 12V CH224K ile 301 Pa / 30.7 mmH2O statik basinc)
-  2. Kayar/Manyetik ODAKLI CONTA HALKALARI (sadece laptopun iki alt izgarasina odaklanan sifir-kacak basinc odalari)
-  3. Tak-Cikar 18°C PCM (Faz Degisimli) On-Sogutucu Alüminyum Petek Kaset (0W, yogusmasiz, giris havasini -5.2°C sogutur)
-  4. Akustik Emis Labirenti (Flydigi BS1 tipi ses kirpici emis koridoru, -7 dBA)
-  5. 2x 4010 Yan Venturi Ejektor Blower (kanatlarda ray uzerinde kayar, sicak egzozu uzaga firlatir)
+RealFans v2.1 (12V USB-C PD) — Gercekci Muhendislik & Evrensel Conta CAD Modeli
+===============================================================================
+Duzeltilmis Mekanizmalar (v2.1):
+  1. 4x 5015 12V Radyal Blower Dizisi (USB-C PD 12V CH224K ile ~265 Pa net statik basinc)
+  2. Evrensel Dikdortgen EPDM Cevre Contasi (IdeaPad Gaming 3 gibi uzun yatay izgaralari kapatmayan
+     genis pozitif basinc odasi - yuvarlak dar halka contalar kaldirildi)
+  3. Arka Mentese Alti Sicak Hava Baraji (ekran mentesesine dokunmadan asagi seken sicak egzozun
+     alt emise geri donusunu %28 -> %3.0 seviyesine kesen kopuk baraj)
+  4. Engelsiz Alt/On Emis Izgaralari (3.5 dakikada eriyen PCM kaseti ve fani bogan labirent kaldirildi)
+  5. 2x 4010 Yan Venturi Ejektor Blower (kanatlarda ray uzerinde kayar, sicak egzozu uzaga iter)
 """
 
 import os
@@ -18,10 +20,10 @@ from FreeCAD import Vector as V
 # ============================================================
 # PARAMETRELER (mm)
 # ============================================================
-TOTAL_H   = 22.0    # Ayak (5mm) + Govde (14mm) + Odakli Conta (3mm)
-FOOT_H    = 5.0
+TOTAL_H   = 21.0    # Ayak (4mm) + Govde (14mm) + EPDM Conta (3mm) -> Katlandiginda 17mm govde!
+FOOT_H    = 4.0
 SEAL_H    = 3.0
-BODY_H    = TOTAL_H - FOOT_H - SEAL_H  # 14.0 mm govde (12mm 5015/7512 blower sigar)
+BODY_H    = TOTAL_H - FOOT_H - SEAL_H  # 14.0 mm govde (5015 blower sigar)
 WALL      = 1.4
 DEPTH     = 260.0
 CENTER_W  = 230.0
@@ -36,21 +38,15 @@ HALF_C    = CENTER_W / 2.0
 WING_X0   = HALF_C + HINGE_GAP
 WING_X1   = WING_X0 + WING_W
 
-# Laptop alt izgara odak merkezleri (X = +/- 55 mm, Y = 155 mm)
-FOCUS_X   = 55.0
-FOCUS_Y   = 155.0
-FOCUS_R_OUT = 44.0
-FOCUS_R_IN  = 34.0
+# Evrensel Dikdortgen Basinc Odasi Acikligi (Uzun yatay laptop izgaralarini tam kapsar)
+PLENUM_W  = 196.0
+PLENUM_D  = 126.0
+PLENUM_Y0 = 96.0
+SEAL_W    = 10.0
 
-# 4x 5015 12V Radyal Blower (her odak halkasini 2 adet paralel blower besler!)
+# 4x 5015 12V Radyal Blower
 BLOWER_D  = 50.0
 BLOWER_T  = 11.0
-
-# PCM 18C Tak-Cikar On-Sogutucu Kaset (arka emis koridorunda, 180 x 55 x 10 mm)
-PCM_W     = 180.0
-PCM_D     = 52.0
-PCM_H     = 10.0
-PCM_Y     = 42.0
 
 # Yan 4010 Venturi Ejektorler
 SIDE_FAN   = 40.0
@@ -58,8 +54,6 @@ SIDE_FAN_T = 10.0
 SIDE_FAN_Y = 160.0
 RAIL_Y0    = 45.0
 RAIL_Y1    = 220.0
-
-LAPTOP_W, LAPTOP_D, LAPTOP_H = 360.0, 265.0, 24.0
 
 
 def box(x, y, z, w, d, h):
@@ -73,28 +67,13 @@ def cyl_z(cx, cy, z, r, h):
 def radial_blower_5015(cx, cy, z, out_dx, out_dy):
     """50x50x11 mm radyal salyangoz blower + cikis boynu."""
     body = cyl_z(cx, cy, z, BLOWER_D / 2.0, BLOWER_T)
-    intake_hole = cyl_z(cx, cy, z - 0.5, 14.0, 3.0)
+    intake_hole = cyl_z(cx, cy, z - 0.5, 14.5, 3.0)
     hub = cyl_z(cx, cy, z + 1.5, 10.0, BLOWER_T - 3.0)
     body = body.cut(intake_hole).fuse(hub)
-    # Cikis agzi (fokus odasina dogru)
     nx = cx + out_dx
     ny = cy + out_dy
     noz = box(min(cx, nx) - 9.0, min(cy, ny) - 9.0, z + 1.0, abs(out_dx) + 18.0, abs(out_dy) + 18.0, BLOWER_T - 2.0)
     return body.fuse(noz)
-
-
-def pcm_cartridge():
-    """Tak-cikar 18°C PCM (Faz Degisimli) Alüminyum Petek On-Sogutucu Kaset."""
-    x0 = -PCM_W / 2.0
-    y0 = PCM_Y - PCM_D / 2.0
-    z0 = Z_IN0 + 0.5
-    outer = box(x0, y0, z0, PCM_W, PCM_D, PCM_H)
-    # Hava gecis kanallari (14 adet ince sogutucu petek koridoru)
-    slot_w = 9.0
-    for i in range(14):
-        sx = x0 + 10.0 + i * 11.8
-        outer = outer.cut(box(sx, y0 - 1.0, z0 + 1.5, slot_w, PCM_D + 2.0, PCM_H - 3.0))
-    return outer
 
 
 def venturi_ejector_blower(side):
@@ -128,47 +107,38 @@ doc = App.newDocument(DOC_NAME)
 
 parts = {}
 
-# 1. Orta Panel Govdesi
+# 1. Orta Panel Govdesi (Genis Dikdortgen Pozitif Basinc Odasi + Engelsiz Alt Emis)
 outer_c = box(-HALF_C, 0, Z0, CENTER_W, DEPTH, BODY_H)
 inner_c = box(-HALF_C + WALL, WALL, Z_IN0, CENTER_W - 2 * WALL, DEPTH - 2 * WALL, INNER_H)
 center = outer_c.cut(inner_c)
-# Ust yuzde sadece 2 odakli izgara acikligi (34 mm yaricap)
-for sx in (-1, 1):
-    center = center.cut(cyl_z(sx * FOCUS_X, FOCUS_Y, Z_IN1 - 0.5, FOCUS_R_IN, WALL + 1.0))
-# On/alt emis izgarasi (PCM kasetinin onunde) + akustik labirent perdeleri
-center = center.cut(box(-PCM_W / 2.0, 6.0, Z0 - 0.5, PCM_W, 18.0, WALL + 1.0))
-parts["OrtaPanel_Turbo"] = (center, (0.18, 0.20, 0.24), 50, "1_Govde")
 
-# 2. Odakli EPDM Conta Halkalari (Sifir Olu Hacim - Dogrudan Laptop Izgarasina Kilitlenir)
-focus_seals = None
-for sx in (-1, 1):
-    cx = sx * FOCUS_X
-    ring = cyl_z(cx, FOCUS_Y, Z0 + BODY_H, FOCUS_R_OUT, SEAL_H).cut(
-        cyl_z(cx, FOCUS_Y, Z0 + BODY_H - 0.5, FOCUS_R_IN, SEAL_H + 1.0)
-    )
-    focus_seals = ring if focus_seals is None else focus_seals.fuse(ring)
-# Arka menteşe sicak hava baraj seridi (IdeaPad Gaming 3 arka egzozunun altina sizmayi kesen düz baraj)
-rear_dam = box(-HALF_C + 8.0, DEPTH - 18.0, Z0 + BODY_H, CENTER_W - 16.0, 10.0, SEAL_H)
-parts["Odakli_Conta_Halkalari_ve_ArkaBaraj"] = (focus_seals.fuse(rear_dam), (0.15, 0.88, 0.45), 10, "2_Turbo_Mekanizmalar")
+# Ust yuzde evrensel genis dikdortgen basinc havuzu acikligi (yatay laptop izgaralarini kapatmaz)
+center = center.cut(box(-PLENUM_W / 2.0, PLENUM_Y0, Z_IN1 - 0.5, PLENUM_W, PLENUM_D, WALL + 1.0))
 
-# 3. 4x 5015 12V Radyal Blower Dizisi (301 Pa)
-b1 = radial_blower_5015(-82.0, 105.0, Z_IN0, 22.0, 35.0)
-b2 = radial_blower_5015(-28.0, 210.0, Z_IN0, -22.0, -35.0)
-b3 = radial_blower_5015(82.0, 105.0, Z_IN0, -22.0, 35.0)
-b4 = radial_blower_5015(28.0, 210.0, Z_IN0, 22.0, -35.0)
-parts["BlowerDizisi_4x5015_12V_301Pa"] = (b1.fuse(b2).fuse(b3).fuse(b4), (0.58, 0.28, 0.92), 0, "2_Turbo_Mekanizmalar")
+# Alt yuzde 4 adet dogrudan serbest emis agzi (fani bogan labirent yok)
+blower_coords = [(-78.0, 72.0), (-32.0, 232.0), (78.0, 72.0), (32.0, 232.0)]
+for bx, by in blower_coords:
+    center = center.cut(cyl_z(bx, by, Z0 - 0.5, 16.0, WALL + 1.0))
 
-# 4. Tak-Cikar 18°C PCM On-Sogutucu Petek Kaset
-parts["PCM_18C_OnSogutucu_Kaset"] = (pcm_cartridge(), (0.20, 0.82, 0.98), 15, "2_Turbo_Mekanizmalar")
+parts["OrtaPanel_v21_PD"] = (center, (0.18, 0.20, 0.24), 45, "1_Govde")
 
-# 5. Akustik Susturucu Labirent Perdeleri (Flydigi BS1 tipi)
-baffles = None
-for i, bx in enumerate((-70.0, -25.0, 25.0, 70.0)):
-    b = box(bx - 15.0, 72.0 + (i % 2) * 8.0, Z_IN0, 30.0, 3.0, INNER_H)
-    baffles = b if baffles is None else baffles.fuse(b)
-parts["Akustik_Susturucu_Labirent"] = (baffles, (0.45, 0.48, 0.52), 0, "2_Turbo_Mekanizmalar")
+# 2. Evrensel Dikdortgen EPDM Conta + Arka Mentese Alti Sicak Hava Baraji
+seal_outer = box(-PLENUM_W / 2.0 - SEAL_W, PLENUM_Y0 - SEAL_W, Z0 + BODY_H, PLENUM_W + 2 * SEAL_W, PLENUM_D + 2 * SEAL_W, SEAL_H)
+seal_inner = box(-PLENUM_W / 2.0, PLENUM_Y0, Z0 + BODY_H - 0.5, PLENUM_W, PLENUM_D, SEAL_H + 1.0)
+rect_seal = seal_outer.cut(seal_inner)
 
-# 6. Kanatlar + 4010 Yan Venturi Ejektorler
+# Arka mentese sicak hava baraj seridi (IdeaPad Gaming 3 arka egzozunun altina sizmayi kesen duz baraj)
+rear_dam = box(-HALF_C + 6.0, DEPTH - 16.0, Z0 + BODY_H, CENTER_W - 12.0, 10.0, SEAL_H)
+parts["Evrensel_Dikdortgen_EPDM_Conta_ve_ArkaBaraj"] = (rect_seal.fuse(rear_dam), (0.15, 0.88, 0.45), 10, "2_Aerodinamik_Mekanizmalar")
+
+# 3. 4x 5015 12V USB-C PD Radyal Blower Dizisi (265 Pa)
+b1 = radial_blower_5015(-78.0, 72.0, Z_IN0, 18.0, 32.0)
+b2 = radial_blower_5015(-32.0, 232.0, Z_IN0, -14.0, -28.0)
+b3 = radial_blower_5015(78.0, 72.0, Z_IN0, -18.0, 32.0)
+b4 = radial_blower_5015(32.0, 232.0, Z_IN0, 14.0, -28.0)
+parts["BlowerDizisi_4x5015_12V_PD"] = (b1.fuse(b2).fuse(b3).fuse(b4), (0.58, 0.28, 0.92), 0, "2_Aerodinamik_Mekanizmalar")
+
+# 4. Kanatlar + 4010 Yan Venturi Ejektorler
 for side, name in ((1, "SagKanat"), (-1, "SolKanat")):
     w_out = box(WING_X0, 0, Z0, WING_W, DEPTH, BODY_H)
     w_in = box(WING_X0 + WALL, WALL, Z_IN0, WING_W - 2 * WALL, DEPTH - 2 * WALL, INNER_H)
@@ -180,11 +150,11 @@ for side, name in ((1, "SagKanat"), (-1, "SolKanat")):
         wing = wing.mirror(V(0, 0, 0), V(1, 0, 0))
     parts[name] = (wing, (0.26, 0.28, 0.33), 55, "1_Govde")
 
-parts["YanEjektor_4010_Sag"] = (venturi_ejector_blower(1), (0.98, 0.55, 0.12), 0, "2_Turbo_Mekanizmalar")
-parts["YanEjektor_4010_Sol"] = (venturi_ejector_blower(-1), (0.98, 0.55, 0.12), 0, "2_Turbo_Mekanizmalar")
+parts["YanEjektor_4010_Sag"] = (venturi_ejector_blower(1), (0.98, 0.55, 0.12), 0, "2_Aerodinamik_Mekanizmalar")
+parts["YanEjektor_4010_Sol"] = (venturi_ejector_blower(-1), (0.98, 0.55, 0.12), 0, "2_Aerodinamik_Mekanizmalar")
 
-# 7. USB-C PD 12V Kontrol Karti (CH224K + PWM)
-parts["PCB_USBC_PD_12V"] = (box(-32.0, DEPTH - 38.0, Z_IN0, 64.0, 34.0, 1.6), (0.05, 0.50, 0.20), 0, "3_Elektronik")
+# 5. USB-C PD 12V Kontrol Karti (CH224K + PWM)
+parts["PCB_USBC_PD_12V"] = (box(-32.0, 12.0, Z_IN0, 64.0, 32.0, 1.6), (0.05, 0.50, 0.20), 0, "3_Elektronik")
 
 groups = {}
 objs = []

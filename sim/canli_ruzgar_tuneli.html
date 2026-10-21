@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>RealFans — Canlı CFD Simülatörü v3 (Turbo PD + PCM Ön-Soğutma)</title>
+  <title>RealFans — Canlı CFD Simülatörü v2.1 (Gerçekçi Mühendislik Kalibrasyonu)</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
 </head>
 <body class="bg-transparent text-[var(--foreground)] antialiased p-3 select-none">
@@ -12,34 +12,34 @@
     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-2">
       <div class="flex items-center gap-2">
         <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <h2 class="font-semibold text-sm sm:text-base">RealFans Canlı Simülatör <span class="text-xs font-normal text-cyan-400">(v3 Turbo + PCM)</span></h2>
+        <h2 class="font-semibold text-sm sm:text-base">RealFans Canlı Simülatör <span class="text-xs font-normal text-cyan-400">(v2.1 Dürüst Mühendislik & Datasheet)</span></h2>
         <div class="flex rounded-lg border border-[var(--border)] overflow-hidden text-xs ml-1">
           <button id="btnMode2D" class="px-2 py-1 font-medium bg-cyan-500/20 text-cyan-400">2B Rüzgar Tüneli</button>
-          <button id="btnMode3D" class="px-2 py-1 font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">3B Turbo Model</button>
+          <button id="btnMode3D" class="px-2 py-1 font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">3B CAD Model</button>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-1.5 text-xs">
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
           <span class="text-[var(--muted-foreground)]">Giriş Havası:</span>
-          <span id="kpiInlet" class="font-bold text-sky-400 ml-1">19.8 °C</span>
+          <span id="kpiInlet" class="font-bold text-sky-400 ml-1">25.3 °C</span>
         </div>
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
-          <span class="text-[var(--muted-foreground)]">Basınç:</span>
-          <span id="kpiPress" class="font-bold text-purple-400 ml-1">142 Pa</span>
+          <span class="text-[var(--muted-foreground)]">Oda Basıncı:</span>
+          <span id="kpiPress" class="font-bold text-purple-400 ml-1">102 Pa</span>
         </div>
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
           <span class="text-[var(--muted-foreground)]">Debi:</span>
-          <span id="kpiFlow" class="font-bold text-cyan-400 ml-1">5.28 L/s</span>
+          <span id="kpiFlow" class="font-bold text-cyan-400 ml-1">4.69 L/s</span>
         </div>
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
           <span class="text-[var(--muted-foreground)]">Ses / Güç:</span>
-          <span id="kpiNoisePower" class="font-bold text-slate-300 ml-1">37 dBA • 14.8 W</span>
+          <span id="kpiNoisePower" class="font-bold text-slate-300 ml-1">45.8 dBA • 15.2 W</span>
         </div>
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
           <span class="text-[var(--muted-foreground)]">T_CPU:</span>
-          <span id="kpiCpu" class="font-bold text-emerald-400 ml-1">64.0 °C</span>
-          <span id="kpiGain" class="font-semibold text-emerald-400 ml-1">(-26.6°C)</span>
+          <span id="kpiCpu" class="font-bold text-emerald-400 ml-1">74.1 °C</span>
+          <span id="kpiGain" class="font-semibold text-emerald-400 ml-1">(-16.5°C)</span>
         </div>
       </div>
     </div>
@@ -47,19 +47,18 @@
     <!-- Hazır Senaryolar -->
     <div class="flex flex-wrap items-center gap-1 text-xs">
       <button data-preset="A" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">A) Düz Masa (90.6°C)</button>
-      <button data-preset="B" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">B) Stand (-6.1°C)</button>
-      <button data-preset="C" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">C) Klasik 8010 (-7.1°C)</button>
-      <button data-preset="D" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">D) 5V Blower (-15.3°C)</button>
-      <button data-preset="E" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">E) 12V PD Turbo (-21.4°C)</button>
-      <button data-preset="F" class="preset-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium">F) ULTRA: 12V Turbo + 18°C PCM (-26.6°C)</button>
-      <button id="btnSmokeBurst" class="ml-auto px-2 py-1 rounded border border-amber-400/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20">💨 Tütsü</button>
+      <button data-preset="B" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">B) Sadece Stand (-4.2°C)</button>
+      <button data-preset="C" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">C) Klasik 8010 Pad (-5.8°C)</button>
+      <button data-preset="D" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">D) RealFans 5V (-12.2°C)</button>
+      <button data-preset="E" class="preset-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium">E) RealFans 12V PD + Conta + Arka Baraj (-16.5°C)</button>
+      <button id="btnSmokeBurst" class="ml-auto px-2 py-1 rounded border border-amber-400/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20">💨 Tütsü Bas</button>
     </div>
 
     <!-- Canlı Kanvas -->
     <div class="relative rounded-lg overflow-hidden border border-[var(--border)] bg-[#0d1117]">
       <canvas id="simCanvas" width="880" height="245" class="w-full h-[245px] block cursor-crosshair"></canvas>
       <div id="canvasHint" class="absolute bottom-1.5 left-3 text-xs text-slate-400 pointer-events-none">
-        <b>F Senaryosu:</b> USB-C PD 12V 4x5015 Blower (301 Pa) + Odaklı Halka Conta + 18°C PCM Kuru Ön-Soğutucu Kaset.
+        <b>Gerçekçi Fizik Notu:</b> Silikon→Bakır sabit iletim direnci (0.195 K/W) dahildir. Dikdörtgen EPDM conta + Arka menteşe barajı aktif.
       </div>
     </div>
 
@@ -68,7 +67,7 @@
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
         <span class="text-[var(--muted-foreground)]">Ana Fan / Blower (Datasheet)</span>
         <select id="selFanType" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
-          <option value="turbo_12v" selected>4x 5015 12V PD Blower (301 Pa)</option>
+          <option value="blower_12v" selected>4x 5015 12V PD Blower (265 Pa)</option>
           <option value="blower_5v">2x 7510 5V Blower (98 Pa)</option>
           <option value="axial_8010">2x 8010 5V Eksenel (14.7 Pa)</option>
         </select>
@@ -85,9 +84,9 @@
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
         <div class="flex justify-between">
           <span class="text-[var(--muted-foreground)]">Ayak Yüksekliği</span>
-          <span id="valGap" class="font-semibold text-cyan-400">15.0 mm</span>
+          <span id="valGap" class="font-semibold text-cyan-400">17.0 mm</span>
         </div>
-        <input id="slGap" type="range" min="2.5" max="22" step="0.5" value="15" class="accent-cyan-400 cursor-pointer" />
+        <input id="slGap" type="range" min="2.5" max="22" step="0.5" value="17" class="accent-cyan-400 cursor-pointer" />
       </div>
 
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
@@ -101,22 +100,14 @@
 
     <!-- Mekanizma Anahtarları -->
     <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
-      <div class="flex flex-wrap items-center gap-3">
+      <div class="flex flex-wrap items-center gap-4">
         <label class="flex items-center gap-1.5 cursor-pointer">
           <input id="chkSeal" type="checkbox" checked class="accent-emerald-400 w-3.5 h-3.5" />
-          <span><b>M1:</b> EPDM Conta</span>
+          <span><b>M1:</b> Evrensel Dikdörtgen EPDM Conta (Yatay Izgara Uyumlu)</span>
         </label>
         <label class="flex items-center gap-1.5 cursor-pointer">
-          <input id="chkFocus" type="checkbox" checked class="accent-purple-400 w-3.5 h-3.5" />
-          <span><b>Odaklı Halka:</b> Sıfır Ölü Hacim (+%45 Basınç)</span>
-        </label>
-        <label class="flex items-center gap-1.5 cursor-pointer">
-          <input id="chkPcm" type="checkbox" checked class="accent-sky-400 w-3.5 h-3.5" />
-          <span><b>18°C PCM Kaset:</b> Kuru Hava Ön-Soğutma (-5.2°C)</span>
-        </label>
-        <label class="flex items-center gap-1.5 cursor-pointer">
-          <input id="chkSilencer" type="checkbox" checked class="accent-teal-400 w-3.5 h-3.5" />
-          <span><b>Akustik Labirent:</b> -7 dBA Ses</span>
+          <input id="chkHingeDam" type="checkbox" checked class="accent-cyan-400 w-3.5 h-3.5" />
+          <span><b>M2:</b> Arka Menteşe Altı Sıcak Hava Barajı (Geri-Dönüş %28 → %3)</span>
         </label>
       </div>
     </div>
@@ -127,26 +118,28 @@
     const canvas = document.getElementById('simCanvas');
     const ctx = canvas.getContext('2d');
 
+    // Sabit silikon -> macun -> bakır ısı borusu iç iletim direnci (0.195 K/W)
+    const R_DIE_TO_FIN = 0.195;
+    const R_CONV_REF = 0.252;
+    const Q_REF = 0.00294;
+
     const state = {
       mode: '2D',
-      fanType: 'turbo_12v', // 'axial_8010', 'blower_5v', 'turbo_12v'
+      fanType: 'blower_12v', // 'axial_8010', 'blower_5v', 'blower_12v'
       fanPct: 100,
-      gapMm: 15.0,
+      gapMm: 17.0,
       ejecPct: 100,
-      ejecAngle: 22,
       seal: true,
-      focusRing: true,
-      pcmCooler: true,
-      silencer: true,
+      hingeDam: true,
       // Çıktılar
-      Q_Ls: 5.28,
-      dP_Pa: 142.0,
-      recircPct: 1.5,
-      T_inlet: 19.8,
-      T_exh: 41.5,
-      T_cpu: 64.0,
-      noiseDba: 37,
-      powerW: 14.8,
+      Q_Ls: 4.69,
+      dP_Pa: 102.0,
+      recircPct: 3.0,
+      T_inlet: 25.3,
+      T_exh: 49.6,
+      T_cpu: 74.1,
+      noiseDba: 45.8,
+      powerW: 15.2,
       rotZ: -0.65,
       rotX: 0.55,
       lastX: 0,
@@ -158,47 +151,43 @@
       const fanFrac = state.fanPct / 100.0;
       const ejecFrac = state.ejecPct / 100.0;
 
-      const R_laptop_int = 4.55e6;
+      const R_laptop_int = 4.65e6;
       const t = Math.max(0, Math.min(1, (state.gapMm - 2.5) / 12.5));
-      const R_gap = 1.95e6 * Math.pow(1 - t, 2.2) + 0.18e6;
+      const R_gap = 2.05e6 * Math.pow(1 - t, 2.2) + 0.18e6;
 
       let P_pad_max = 0, Q_pad_max = 0.001, leakFactor = 0, baseNoise = 0, basePower = 0;
 
       if (fanFrac > 0.01) {
         if (state.fanType === 'axial_8010') {
-          P_pad_max = 16.5 * Math.pow(fanFrac, 1.7);
+          P_pad_max = 14.7 * Math.pow(fanFrac, 1.7);
           Q_pad_max = 0.017 * fanFrac;
-          leakFactor = state.seal ? 0.10 : 0.58;
-          baseNoise = 18 + 8 * fanFrac;
-          basePower = 2.2 * Math.pow(fanFrac, 2.4);
+          leakFactor = state.seal ? 0.12 : 0.58;
+          baseNoise = 34 + 9.2 * fanFrac;
+          basePower = 2.2 * Math.pow(fanFrac, 2.3);
         } else if (state.fanType === 'blower_5v') {
-          P_pad_max = 103.0 * Math.pow(fanFrac, 1.7);
+          P_pad_max = 98.0 * Math.pow(fanFrac, 1.7);
           Q_pad_max = 0.0085 * fanFrac;
           leakFactor = state.seal ? 0.08 : 0.42;
-          baseNoise = 24 + 12 * fanFrac;
-          basePower = 5.5 * Math.pow(fanFrac, 2.4);
+          baseNoise = 32 + 9.0 * fanFrac;
+          basePower = 4.8 * Math.pow(fanFrac, 2.3);
         } else {
-          // 4x 5015 12V PD Blower (GDSTIME/Sunon 30.7 mmH2O = 301 Pa, 21.5 CFM = 10.2 L/s)
-          P_pad_max = 301.0 * Math.pow(fanFrac, 1.75);
+          // 4x 5015 12V USB-C PD Blower (265 Pa net statik basınç)
+          P_pad_max = 265.0 * Math.pow(fanFrac, 1.75);
           Q_pad_max = 0.0102 * fanFrac;
-          leakFactor = state.seal ? 0.05 : 0.38;
-          baseNoise = 28 + 16 * fanFrac;
-          basePower = 13.2 * Math.pow(fanFrac, 2.4);
+          leakFactor = state.seal ? 0.06 : 0.38;
+          baseNoise = 34 + 11.2 * fanFrac;
+          basePower = 13.8 * Math.pow(fanFrac, 2.3);
         }
       }
 
-      // Odaklı halka conta (sadece 2x 80mm ızgaraya odaklanma) ölü hacmi kesip efektif basıncı artırır
-      let coupling = state.seal ? (state.focusRing ? 0.94 : 0.78) : 0.36;
-      if (state.seal && state.focusRing) {
-        P_pad_max *= 1.18;
-      }
+      const coupling = state.seal ? 0.80 : 0.36;
 
       let bestQ = 0.00294;
       let minDiff = 1e9;
       let bestPadP = 0;
 
-      for (let i = 0; i < 350; i++) {
-        const q = 0.0010 + (0.0110 * i) / 349.0;
+      for (let i = 0; i < 400; i++) {
+        const q = 0.0010 + (0.0110 * i) / 399.0;
         const p_lap = Math.max(0, 85.0 * (1.0 - Math.pow(q / 0.0058, 1.6)));
         let p_pad = 0;
         if (fanFrac > 0.01) {
@@ -206,7 +195,7 @@
           p_pad = coupling * Math.max(0, P_pad_max * (1.0 - Math.pow(q_pad_eff / Math.max(0.0005, Q_pad_max), 1.45)));
         }
         const p_sup = p_lap + p_pad;
-        const r_in = R_gap * ((fanFrac > 0.05 && state.seal) ? 0.16 : 1.0);
+        const r_in = R_gap * ((fanFrac > 0.05 && state.seal) ? 0.22 : 1.0);
         const p_dem = (R_laptop_int + r_in) * q * q;
         const diff = Math.abs(p_sup - p_dem);
         if (diff < minDiff) {
@@ -217,38 +206,39 @@
       }
 
       // Geri-dönüş (Recirculation)
-      let alpha_rec = 0.18 + 0.10 * Math.pow(1 - t, 1.6);
-      if (fanFrac > 0.05) {
-        if (state.seal) {
-          const pressFactor = Math.min(1.0, bestPadP / 50.0);
-          alpha_rec *= (1.0 - (0.52 + 0.35 * pressFactor) * fanFrac);
-        } else {
-          alpha_rec *= (1.0 - 0.11 * fanFrac);
-        }
+      let alpha_rec = 0.185 + 0.095 * Math.pow(1 - t, 1.6);
+      if (state.seal) {
+        alpha_rec *= 0.42;
+      } else if (fanFrac > 0.05) {
+        alpha_rec *= (1.0 - 0.14 * fanFrac);
       }
-      alpha_rec *= (1.0 - 0.68 * ejecFrac);
-      alpha_rec = Math.max(0.015, Math.min(0.32, alpha_rec));
+      if (state.hingeDam) {
+        alpha_rec *= 0.62;
+      }
+      alpha_rec *= (1.0 - 0.42 * ejecFrac);
+      alpha_rec = Math.max(0.030, Math.min(0.280, alpha_rec));
 
-      // 18°C PCM Ön-Soğutucu Kaset: Emilen 25°C havayı yoğuşmasız ~19.6°C'ye soğutur
-      const pcmDrop = state.pcmCooler ? (fanFrac > 0.05 ? 5.2 : 1.8) : 0.0;
       const dT_air = 135.0 / (1.18 * 1005.0 * bestQ);
-      const T_inlet = (25.0 - pcmDrop) + (alpha_rec / (1.0 - alpha_rec)) * dT_air * 0.42;
+      const T_inlet = 25.0 + (alpha_rec / (1.0 - alpha_rec)) * dT_air * 0.42;
       const T_exh = Math.min(82.0, T_inlet + dT_air);
 
-      const q_ref = 0.00321;
-      // Odaklı halka yüksek hızlı jet (impingement) sayesinde ızgara/kanatçık sınır tabakasını inceltir
-      const impingeBonus = (state.seal && state.focusRing && fanFrac > 0.2) ? 0.92 : 1.00;
-      const r_th_eff = 0.422 * impingeBonus * Math.pow(q_ref / bestQ, 0.46);
-      const T_cpu = T_inlet + 135.0 * r_th_eff;
+      // İki kademeli gerçekçi termal direnç (Silikon->Isı Borusu sabit + Kanatçık->Hava değişken)
+      const r_conv = R_CONV_REF * Math.pow(Q_REF / bestQ, 0.62);
+      const r_th_total = R_DIE_TO_FIN + r_conv;
+      const T_cpu = T_inlet + 135.0 * r_th_total;
 
-      const ejecPower = 1.6 * Math.pow(ejecFrac, 2.4);
-      const ejecNoise = ejecFrac > 0.05 ? (22 + 12.5 * ejecFrac) : 0;
+      const ejecPower = 1.4 * Math.pow(ejecFrac, 2.3);
+      const ejecNoise = ejecFrac > 0.05 ? (28 + 9.0 * ejecFrac) : 0;
       const totalPower = basePower + ejecPower;
-      let totalNoise = (baseNoise === 0 && ejecNoise === 0)
-        ? 0
-        : 10 * Math.log10(Math.pow(10, baseNoise / 10) + (ejecNoise > 0 ? Math.pow(10, ejecNoise / 10) : 0));
-      if (state.silencer && totalNoise > 22) {
-        totalNoise = Math.max(21, totalNoise - 6.8);
+      let totalNoise = 45.0;
+      if (fanFrac <= 0.01 && ejecFrac <= 0.01) {
+        totalNoise = state.gapMm <= 3.5 ? 46.0 : 45.0;
+      } else {
+        totalNoise = 10 * Math.log10(
+          (baseNoise > 0 ? Math.pow(10, baseNoise / 10) : 0) +
+          (ejecNoise > 0 ? Math.pow(10, ejecNoise / 10) : 0) +
+          Math.pow(10, 38.0 / 10)
+        );
       }
 
       state.Q_Ls = bestQ * 1000.0;
@@ -263,12 +253,12 @@
       document.getElementById('kpiInlet').textContent = state.T_inlet.toFixed(1) + ' °C';
       document.getElementById('kpiFlow').textContent = state.Q_Ls.toFixed(2) + ' L/s';
       document.getElementById('kpiPress').textContent = state.dP_Pa.toFixed(0) + ' Pa';
-      document.getElementById('kpiNoisePower').textContent = `${state.noiseDba.toFixed(0)} dBA • ${state.powerW.toFixed(1)} W`;
+      document.getElementById('kpiNoisePower').textContent = `${state.noiseDba.toFixed(1)} dBA • ${state.powerW.toFixed(1)} W`;
       document.getElementById('kpiCpu').textContent = state.T_cpu.toFixed(1) + ' °C';
       const gain = 90.6 - state.T_cpu;
       const gainEl = document.getElementById('kpiGain');
       gainEl.textContent = (gain >= 0 ? '(-' : '(+') + Math.abs(gain).toFixed(1) + '°C)';
-      gainEl.className = gain >= 20 ? 'font-bold text-emerald-400 ml-1' : (gain >= 12 ? 'font-semibold text-cyan-400 ml-1' : 'font-semibold text-amber-400 ml-1');
+      gainEl.className = gain >= 15 ? 'font-bold text-emerald-400 ml-1' : (gain >= 10 ? 'font-semibold text-cyan-400 ml-1' : 'font-semibold text-amber-400 ml-1');
     }
 
     function mmToPx(xMm, zMm) {
@@ -286,18 +276,17 @@
       p.smoke = isSmoke;
       p.age = 0;
       p.maxAge = isSmoke ? 220 + Math.random() * 120 : 140 + Math.random() * 100;
-      const startTemp = state.pcmCooler ? 19.6 : 25.0;
       if (customX !== null) {
         p.x = customX;
         p.z = customZ;
-        p.temp = p.x > 175 && p.z > zBot ? state.T_exh : startTemp;
+        p.temp = p.x > 175 && p.z > zBot ? state.T_exh : 25.0;
         return;
       }
       const r = Math.random();
       if (r < 0.45) {
         p.x = 185 + Math.random() * 90;
         p.z = 1.5 + Math.random() * Math.max(zBot - 2, 4);
-        p.temp = startTemp;
+        p.temp = 25.0;
       } else if (r < 0.80) {
         p.x = 180 + Math.random() * 4;
         p.z = zBot + 7 + Math.random() * 11;
@@ -332,9 +321,8 @@
         const vUnder = 1.1 + 2.1 * (state.Q_Ls / 4.5);
         u -= vUnder * Math.min(1.0, xMm / 45.0);
         const distIntake = Math.abs(xMm - 55.0);
-        const widthIntake = state.focusRing ? 14.0 : 22.0;
-        if (distIntake < 28.0) {
-          w += vUnder * (state.focusRing ? 1.35 : 0.95) * Math.exp(-Math.pow(distIntake / widthIntake, 2));
+        if (distIntake < 32.0) {
+          w += vUnder * 1.05 * Math.exp(-Math.pow(distIntake / 24.0, 2));
         }
         if (fanFrac > 0.05 && !state.seal && xMm > 110 && zMm > zBot * 0.40) {
           const leakMul = state.fanType === 'axial_8010' ? 3.1 : 2.1;
@@ -373,9 +361,6 @@
     }
 
     function tempToColor(temp, alpha = 0.88) {
-      if (temp < 22.5) {
-        return `rgba(56, 189, 248, ${alpha})`; // PCM buz mavisi
-      }
       const t = Math.max(0, Math.min(1, (temp - 24.0) / 56.0));
       let r, g, b;
       if (t < 0.35) {
@@ -409,49 +394,37 @@
       ctx.fillStyle = '#1e293b';
       ctx.fillRect(m0x, m0y, m1x - m0x, 22);
 
-      // 18°C PCM Ön-Soğutucu Kaset Çizimi (X = 95..145 mm)
-      if (state.pcmCooler) {
-        const [p0x, p0y] = mmToPx(95, zBot * 0.85);
-        const [p1x, p1y] = mmToPx(148, zBot * 0.15);
-        ctx.fillStyle = 'rgba(14, 165, 233, 0.35)';
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 1.5;
-        ctx.fillRect(p0x, p0y, p1x - p0x, p1y - p0y);
-        ctx.strokeRect(p0x, p0y, p1x - p0x, p1y - p0y);
-        ctx.fillStyle = '#7dd3fc';
-        ctx.font = 'bold 10.5px sans-serif';
-        ctx.fillText('❄️ 18°C PCM Kaset', p0x + 8, p0y - 3);
-      }
-
       // Ana Blower / Fan (X = 35..75 mm)
       const [f0x, f0y] = mmToPx(35, zBot * 0.60);
       const [f1x, f1y] = mmToPx(75, zBot * 0.15);
       if (state.fanPct > 0) {
-        const isTurbo = state.fanType === 'turbo_12v';
-        ctx.fillStyle = isTurbo ? 'rgba(168, 85, 247, 0.42)' : 'rgba(14, 165, 233, 0.28)';
-        ctx.strokeStyle = isTurbo ? '#d8b4fe' : '#38bdf8';
+        const is12V = state.fanType === 'blower_12v';
+        ctx.fillStyle = is12V ? 'rgba(168, 85, 247, 0.42)' : 'rgba(14, 165, 233, 0.28)';
+        ctx.strokeStyle = is12V ? '#d8b4fe' : '#38bdf8';
         ctx.lineWidth = 1.8;
         ctx.fillRect(f0x, f0y, f1x - f0x, f1y - f0y);
         ctx.strokeRect(f0x, f0y, f1x - f0x, f1y - f0y);
       }
 
-      // Odaklı Halka Conta (X = 30..80 mm etrafında) ve Arka/Yan Baraj Conta (X = 165 mm)
+      // Evrensel Dikdörtgen EPDM Conta ve Arka Menteşe Barajı
       if (state.seal) {
-        const [s0x, s0y] = mmToPx(164, zBot);
-        const [s1x, s1y] = mmToPx(173, 0);
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.80)';
-        ctx.fillRect(s0x, s0y, s1x - s0x, (s1y - s0y) * 0.55);
-        if (state.focusRing) {
-          const [r0x, r0y] = mmToPx(32, zBot);
-          const [r1x, r1y] = mmToPx(78, zBot * 0.62);
-          ctx.fillStyle = 'rgba(168, 85, 247, 0.75)';
-          ctx.fillRect(r0x - 5, r0y, 5, r1y - r0y);
-          ctx.fillRect(r1x, r0y, 5, r1y - r0y);
-        }
+        const [s0x, s0y] = mmToPx(162, zBot);
+        const [s1x, s1y] = mmToPx(171, 0);
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.82)';
+        ctx.fillRect(s0x, s0y, s1x - s0x, (s1y - s0y) * 0.65);
+        ctx.fillStyle = '#86efac';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('Dikdörtgen EPDM Conta', s0x - 115, s0y + 14);
+      }
+      if (state.hingeDam) {
+        const [d0x, d0y] = mmToPx(173, zBot);
+        const [d1x, d1y] = mmToPx(179, 0);
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
+        ctx.fillRect(d0x, d0y, d1x - d0x, (d1y - d0y) * 0.50);
       }
 
       if (state.ejecPct > 0) {
-        const [n0x, n0y] = mmToPx(173, Math.max(3, zBot - 1));
+        const [n0x, n0y] = mmToPx(176, Math.max(3, zBot - 1));
         ctx.fillStyle = '#f59e0b';
         ctx.beginPath();
         ctx.arc(n0x, n0y, 5, 0, Math.PI * 2);
@@ -466,9 +439,7 @@
         p.z += w * 0.85 + (Math.random() - 0.5) * 0.25;
         p.age += 1;
 
-        if (state.pcmCooler && p.x >= 95 && p.x <= 148 && p.z < zBot) {
-          p.temp = Math.max(19.6, p.temp - 0.8);
-        } else if (p.x <= 180 && p.z >= zBot && p.z <= zTop) {
+        if (p.x <= 180 && p.z >= zBot && p.z <= zTop) {
           p.temp = Math.min(state.T_exh, p.temp + 1.0);
         } else {
           p.temp = Math.max(25.0, p.temp - 0.15);
@@ -500,8 +471,8 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(l0x, l0y, l1x - l0x, l1y - l0y);
 
-      const [ig0x, ig0y] = mmToPx(38, zBot);
-      const [ig1x, ig1y] = mmToPx(72, zBot);
+      const [ig0x, ig0y] = mmToPx(32, zBot);
+      const [ig1x, ig1y] = mmToPx(78, zBot);
       ctx.strokeStyle = '#22d3ee';
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -520,10 +491,10 @@
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 12px sans-serif';
-      ctx.fillText(`LAPTOP (135W)  •  T_CPU: ${state.T_cpu.toFixed(1)} °C  •  Kazanç: -${(90.6 - state.T_cpu).toFixed(1)} °C`, l0x + 12, (l0y + l1y) / 2 + 4);
+      ctx.fillText(`LAPTOP (135W)  •  T_CPU: ${state.T_cpu.toFixed(1)} °C  •  Gerçekçi Kazanç: -${(90.6 - state.T_cpu).toFixed(1)} °C`, l0x + 12, (l0y + l1y) / 2 + 4);
       ctx.fillStyle = '#22d3ee';
       ctx.font = '11px sans-serif';
-      ctx.fillText(`Odaklı Giriş (${state.T_inlet.toFixed(1)}°C)`, ig0x - 4, ig0y - 6);
+      ctx.fillText(`Geniş Alt Izgara (${state.T_inlet.toFixed(1)}°C)`, ig0x - 4, ig0y - 6);
       ctx.fillStyle = '#fda4af';
       ctx.fillText(`Egzoz (${state.T_exh.toFixed(0)}°C)`, eg0x + 8, eg1y - 2);
     }
@@ -589,30 +560,20 @@
       drawBox3D(117, -130, zPad, 75, 260, 14, '#475569', 'rgba(30, 41, 59, 0.5)');
       drawBox3D(-192, -130, zPad, 75, 260, 14, '#475569', 'rgba(30, 41, 59, 0.5)');
 
-      // 18°C PCM Ön-Soğutucu Kaset (Buz mavisi)
-      if (state.pcmCooler) {
-        drawBox3D(-90, -115, zPad + 2, 180, 52, 10, '#38bdf8', 'rgba(56, 189, 248, 0.35)');
+      // Evrensel Dikdörtgen EPDM Conta (Yeşil)
+      if (state.seal) {
+        drawBox3D(-98, -34, zPad + 14, 196, 126, 3, '#22c55e', 'rgba(34, 197, 94, 0.25)');
       }
-
-      // Odaklı Conta Halkaları
-      for (const sx of [-1, 1]) {
-        const cx = sx * 55, cy = 25;
-        ctx.strokeStyle = state.focusRing ? '#22c55e' : '#38bdf8';
-        ctx.lineWidth = 2.2;
-        ctx.beginPath();
-        for (let a = 0; a <= 24; a++) {
-          const ang = (a / 24) * Math.PI * 2;
-          const [px, py] = project3D(cx + Math.cos(ang) * 40, cy + Math.sin(ang) * 40, zPad + 15);
-          if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        }
-        ctx.stroke();
+      // Arka Menteşe Altı Sıcak Hava Barajı (Mavi-Yeşil Şerit)
+      if (state.hingeDam) {
+        drawBox3D(-108, 112, zPad + 14, 216, 10, 3, '#38bdf8', 'rgba(56, 189, 248, 0.55)');
       }
 
       // 4x 5015 12V Radyal Blower
-      const blowers = [[-82, -25], [-28, 80], [82, -25], [28, 80]];
+      const blowers = [[-78, -58], [-32, 102], [78, -58], [32, 102]];
       for (const [bx, by] of blowers) {
         ctx.strokeStyle = '#c084fc';
-        ctx.lineWidth = 1.4;
+        ctx.lineWidth = 1.6;
         ctx.beginPath();
         for (let a = 0; a <= 20; a++) {
           const ang = (a / 20) * Math.PI * 2;
@@ -637,7 +598,7 @@
             x = cx + (Math.random() - 0.5) * 30;
             y = -115 + k * 140;
             z = zPad + 6;
-            col = state.pcmCooler ? '#38bdf8' : '#22d3ee';
+            col = '#22d3ee';
           } else {
             const k = (p.phase - 0.45) / 0.55;
             x = cx + p.side * k * 135;
@@ -712,9 +673,7 @@
     const slGap = document.getElementById('slGap');
     const slEjec = document.getElementById('slEjec');
     const chkSeal = document.getElementById('chkSeal');
-    const chkFocus = document.getElementById('chkFocus');
-    const chkPcm = document.getElementById('chkPcm');
-    const chkSilencer = document.getElementById('chkSilencer');
+    const chkHingeDam = document.getElementById('chkHingeDam');
 
     function syncControlsToState() {
       state.fanType = selFanType.value;
@@ -722,9 +681,7 @@
       state.gapMm = parseFloat(slGap.value);
       state.ejecPct = parseFloat(slEjec.value);
       state.seal = chkSeal.checked;
-      state.focusRing = chkFocus.checked;
-      state.pcmCooler = chkPcm.checked;
-      state.silencer = chkSilencer.checked;
+      state.hingeDam = chkHingeDam.checked;
 
       document.getElementById('valFan').textContent = state.fanPct.toFixed(0) + '%';
       document.getElementById('valGap').textContent = state.gapMm.toFixed(1) + ' mm';
@@ -732,18 +689,17 @@
       updatePhysics();
     }
 
-    [selFanType, slFan, slGap, slEjec, chkSeal, chkFocus, chkPcm, chkSilencer].forEach(el => {
+    [selFanType, slFan, slGap, slEjec, chkSeal, chkHingeDam].forEach(el => {
       el.addEventListener('input', syncControlsToState);
       el.addEventListener('change', syncControlsToState);
     });
 
     const presets = {
-      A: { type: 'axial_8010', fan: 0, gap: 2.5, ejec: 0, seal: false, focus: false, pcm: false, sil: false },
-      B: { type: 'axial_8010', fan: 0, gap: 15.0, ejec: 0, seal: false, focus: false, pcm: false, sil: false },
-      C: { type: 'axial_8010', fan: 100, gap: 15.0, ejec: 0, seal: false, focus: false, pcm: false, sil: false },
-      D: { type: 'blower_5v', fan: 100, gap: 15.0, ejec: 100, seal: true, focus: false, pcm: false, sil: false },
-      E: { type: 'turbo_12v', fan: 100, gap: 15.0, ejec: 100, seal: true, focus: true, pcm: false, sil: true },
-      F: { type: 'turbo_12v', fan: 100, gap: 15.0, ejec: 100, seal: true, focus: true, pcm: true, sil: true }
+      A: { type: 'axial_8010', fan: 0, gap: 2.5, ejec: 0, seal: false, dam: false },
+      B: { type: 'axial_8010', fan: 0, gap: 15.0, ejec: 0, seal: false, dam: false },
+      C: { type: 'axial_8010', fan: 100, gap: 15.0, ejec: 0, seal: false, dam: false },
+      D: { type: 'blower_5v', fan: 100, gap: 15.0, ejec: 0, seal: true, dam: true },
+      E: { type: 'blower_12v', fan: 100, gap: 17.0, ejec: 100, seal: true, dam: true }
     };
 
     document.querySelectorAll('.preset-btn').forEach(btn => {
@@ -754,9 +710,7 @@
         slGap.value = p.gap;
         slEjec.value = p.ejec;
         chkSeal.checked = p.seal;
-        chkFocus.checked = p.focus;
-        chkPcm.checked = p.pcm;
-        chkSilencer.checked = p.sil;
+        chkHingeDam.checked = p.dam;
         document.querySelectorAll('.preset-btn').forEach(b => {
           b.className = 'preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400';
         });
