@@ -2,61 +2,65 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>RealFans — 3B Çok Düzlemli (Laptop Yanına Kapanan Kanat) Simülatörü</title>
+  <title>RealFans — Sağa-Sola Açılıp Laptopa Birebir Yapışan L-Kanat Simülatörü</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
 </head>
 <body class="bg-transparent text-[var(--foreground)] antialiased p-2.5 select-none">
   <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-xl p-3 shadow-sm flex flex-col gap-2">
     
-    <!-- Üst Başlık + Canlı Metrikler -->
+    <!-- Üst Başlık + Canlı Derece Farkları -->
     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-2">
       <div class="flex items-center gap-2">
         <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <h2 class="font-semibold text-sm">RealFans 3B Çok-Düzlemli Laboratuvar <span class="text-xs font-normal text-cyan-400">(Alt Basınç + Yan 1cm Egzoz Hizalama)</span></h2>
+        <h2 class="font-semibold text-sm">RealFans Canlı Simülatör <span class="text-xs font-normal text-cyan-400">(Sağa-Sola Açılıp Laptopa Birebir Yapışan L-Kanatlar)</span></h2>
         <div class="flex rounded-lg border border-[var(--border)] overflow-hidden text-xs ml-1">
-          <button id="btnMode3D" class="px-2 py-1 font-medium bg-cyan-500/20 text-cyan-400">3B Katlanır Kutu & Laptop</button>
-          <button id="btnMode2D" class="px-2 py-1 font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">2B Yan Kesit (Z-Kotu)</button>
+          <button id="btnMode3D" class="px-2 py-1 font-medium bg-cyan-500/20 text-cyan-400">3B Açılır-Kapanır Kanat</button>
+          <button id="btnMode2D" class="px-2 py-1 font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">2B Push-Pull Kesit</button>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-1.5 text-xs">
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
-          <span class="text-[var(--muted-foreground)]">Yan Hiza:</span>
-          <span id="kpiAlign" class="font-bold text-emerald-400 ml-1">%100 Tam Hiza</span>
+          <span class="text-[var(--muted-foreground)]">Baz (Masada):</span>
+          <span class="font-bold text-rose-400 ml-1">92.0 °C</span>
         </div>
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
-          <span class="text-[var(--muted-foreground)]">Debi:</span>
-          <span id="kpiFlow" class="font-bold text-cyan-400 ml-1">6.63 L/s</span>
+          <span class="text-[var(--muted-foreground)]">Şu Anki T_CPU:</span>
+          <span id="kpiCpu" class="font-bold text-emerald-400 ml-1">69.8 °C</span>
+        </div>
+        <div class="px-2 py-1 rounded bg-emerald-500/15 border border-emerald-500/50">
+          <span class="text-emerald-200">Net Derece Farkı:</span>
+          <span id="kpiGain" class="font-bold text-emerald-400 ml-1">-22.2 °C</span>
         </div>
         <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
-          <span class="text-[var(--muted-foreground)]">Geri-Dönüş:</span>
-          <span id="kpiRecirc" class="font-bold text-sky-400 ml-1">%1.2</span>
-        </div>
-        <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
-          <span class="text-[var(--muted-foreground)]">Ses / Güç:</span>
-          <span id="kpiNoisePower" class="font-bold text-slate-300 ml-1">47.5 dBA • 19.0 W</span>
-        </div>
-        <div class="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)]">
-          <span class="text-[var(--muted-foreground)]">T_CPU:</span>
-          <span id="kpiCpu" class="font-bold text-emerald-400 ml-1">70.5 °C</span>
-          <span id="kpiGain" class="font-semibold text-emerald-400 ml-1">(-21.5°C)</span>
+          <span class="text-[var(--muted-foreground)]">Debi / Ses:</span>
+          <span id="kpiFlowNoise" class="font-bold text-cyan-400 ml-1">6.92 L/s • 47.4 dBA</span>
         </div>
       </div>
     </div>
 
-    <!-- Üst Kısayollar: Yan Kanat Geometrisi Karşılaştırması -->
+    <!-- Derece Farklı Hazır Senaryo Butonları -->
     <div class="flex flex-wrap items-center gap-1 text-xs">
-      <button data-wing="FLAT" class="wing-btn px-2 py-1 rounded border border-[var(--border)] hover:border-rose-400 text-rose-300">❌ Hatalı: Aynı Düzlemde Düz Kanat (Yan 1cm Egzozu Iskalar!)</button>
-      <button data-wing="CRADLE" class="wing-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium">✅ Çözüm 1: Yukarı Katlanan L-Beşik Kanat (1cm Yan Egzoza Kapanır)</button>
-      <button data-wing="PERISCOPE" class="wing-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400">✅ Çözüm 2: Altta Fan + Yukarı Kalkan 1cm Periskop Nozul</button>
-      <button data-wing="FOLDED" class="wing-btn px-2 py-1 rounded border border-[var(--border)] hover:border-amber-400">🎒 Çanta Modu (Tamamen Katlanmış 18mm)</button>
+      <button data-preset="OPEN" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-rose-400 text-rose-300">
+        1) Kanatlar Açık/Uzakta (35mm Boşluk): 76.8°C (-15.2°C)
+      </button>
+      <button data-preset="HALF" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-amber-400 text-amber-300">
+        2) Kanatlar Yarı Yanaşık (10mm Boşluk): 73.4°C (-18.6°C)
+      </button>
+      <button data-preset="FLUSH" class="preset-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium">
+        3) BİREBİR YAPIŞIK (0mm Tam Kilit • Push-Pull): 69.8°C (-22.2°C)
+      </button>
+      <button data-preset="COMPACT" class="preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400 text-sky-300">
+        🎒 Çanta Modu (Laptop Yok • Tam Kapalı 250mm)
+      </button>
     </div>
 
     <!-- Canlı Kanvas -->
     <div class="relative rounded-lg overflow-hidden border border-[var(--border)] bg-[#0d1117]">
       <canvas id="simCanvas" width="880" height="235" class="w-full h-[235px] block cursor-grab"></canvas>
-      <div id="canvasHint" class="absolute bottom-1.5 left-3 text-xs text-slate-300 pointer-events-none">
-        <b>3B Sahne (Fareyle Döndür):</b> Kırmızı şeritler laptopun yanındaki <b>1 cm'lik egzoz ızgarasıdır</b> (Z=24..34mm). Yan kanatlar yukarı katlanıp tam o kota oturur.
+      <div id="canvasHint" class="absolute bottom-1.5 left-3 right-3 flex justify-between text-xs text-slate-300 pointer-events-none">
+        <span id="hintLeft"><b>Birebir Yapışma Etkisi:</b> Sağ ve sol L-kanatlar laptopun yanına sıfır boşlukla (0 mm) yapıştığında +7.0 °C ekstra soğutma kazandırır!</span>
+        <span id="hintRight" class="text-emerald-400 font-semibold">Yapışma Kazancı: +7.0 °C Ekstra Düşüş</span>
       </div>
     </div>
 
@@ -64,47 +68,45 @@
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
         <div class="flex justify-between">
-          <span class="text-[var(--muted-foreground)] font-medium">Yan Kanat Kalkma</span>
-          <span id="valWingLift" class="font-bold text-emerald-400">85° (Hizalı)</span>
+          <span class="text-[var(--muted-foreground)] font-medium">Kanat Yan Boşluğu</span>
+          <span id="valGapSide" class="font-bold text-emerald-400">0 mm (Yapışık!)</span>
         </div>
-        <input id="slWingLift" type="range" min="0" max="90" step="5" value="85" class="accent-emerald-400 cursor-pointer" />
+        <input id="slGapSide" type="range" min="0" max="40" step="1" value="0" class="accent-emerald-400 cursor-pointer" />
       </div>
 
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
-        <span class="text-[var(--muted-foreground)] font-medium">Ana Fan Boyutu</span>
-        <select id="selFanSize" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
-          <option value="4010">40×40×10 mm (140 Pa)</option>
-          <option value="5015">50×50×15 mm (265 Pa)</option>
-          <option value="6015" selected>60×60×15 mm (315 Pa)</option>
-          <option value="7515">75×75×15 mm (360 Pa)</option>
+        <span class="text-[var(--muted-foreground)] font-medium">Laptop Boyutu (Genişlik)</span>
+        <select id="selLaptopSize" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
+          <option value="310">13.3" / 14" Kompakt (310 mm)</option>
+          <option value="360" selected>15.6" IdeaPad Gaming 3 (360 mm)</option>
+          <option value="395">17.3" Geniş Gaming (395 mm)</option>
         </select>
       </div>
 
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
-        <span class="text-[var(--muted-foreground)] font-medium">Ana Fan Adedi</span>
-        <select id="selFanCount" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
-          <option value="2">2 Adet Blower</option>
-          <option value="4" selected>4 Adet Blower</option>
-          <option value="6">6 Adet Blower</option>
-          <option value="8">8 Adet Blower</option>
+        <span class="text-[var(--muted-foreground)] font-medium">Alt Ana Fan Boyutu & Adedi</span>
+        <select id="selMainFans" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
+          <option value="4x5015">4× 5015 Blower (-19.8°C Yapışık)</option>
+          <option value="6x5015">6× 5015 Blower (-21.4°C Yapışık)</option>
+          <option value="4x6015" selected>4× 6015 Blower (-22.2°C Yapışık)</option>
+          <option value="8x4010">8× 4010 Ultra İnce (-18.4°C Yapışık)</option>
         </select>
       </div>
 
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
-        <span class="text-[var(--muted-foreground)] font-medium">Giriş Kutu Bölme</span>
+        <span class="text-[var(--muted-foreground)] font-medium">Alt Kutu Bölme (Giriş)</span>
         <select id="selIntakeZones" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
-          <option value="1">1 Bölme: Tek Havuz</option>
-          <option value="2">2 Bölme: CPU + GPU</option>
-          <option value="3" selected>3 Bölme: CPU+GPU+VRM</option>
+          <option value="1">1 Bölme: Tek Havuz (+2.8°C Kayıp)</option>
+          <option value="2">2 Bölme: Sol CPU + Sağ GPU (+1.2°C)</option>
+          <option value="3" selected>3 Bölme: CPU+GPU+Orta VRM (En İyi)</option>
         </select>
       </div>
 
       <div class="flex flex-col gap-1 bg-[var(--background)] p-2 rounded-lg border border-[var(--border)]">
-        <span class="text-[var(--muted-foreground)] font-medium">Çıkış Egzoz Bölme</span>
+        <span class="text-[var(--muted-foreground)] font-medium">Yan Kanat Vakum / Çıkış</span>
         <select id="selExhaustPorts" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-1 text-xs cursor-pointer">
-          <option value="0">0 Kanal (Doğal)</option>
-          <option value="2">2 Kanal (Yan 1cm Slot)</option>
-          <option value="4" selected>4 Kanal (2 Yan + 2 Köşe)</option>
+          <option value="2">2 Kanal: Sağ + Sol 1cm Yan Vakum</option>
+          <option value="4" selected>4 Kanal: 2 Yan + 2 Arka-Köşe (-1.4°C Ek)</option>
         </select>
       </div>
     </div>
@@ -119,46 +121,44 @@
     const R_CONV_REF = 0.252;
     const Q_REF = 0.00294;
 
-    const FAN_DB = {
-      '4010': { d: 40, h: 10, P: 140.5, Q: 1.42, noise: 34.5, power: 0.95 },
-      '5015': { d: 50, h: 15, P: 265.0, Q: 2.55, noise: 39.2, power: 3.10 },
-      '6015': { d: 60, h: 15, P: 315.0, Q: 3.75, noise: 41.0, power: 4.20 },
-      '7515': { d: 75, h: 15, P: 360.0, Q: 5.20, noise: 43.2, power: 5.80 }
+    const MAIN_FAN_CONFIGS = {
+      '8x4010': { d: 40, n: 8, P: 140.5, Q_single: 1.42, noise_single: 34.5, power_single: 0.95 },
+      '4x5015': { d: 50, n: 4, P: 265.0, Q_single: 2.55, noise_single: 39.2, power_single: 3.10 },
+      '6x5015': { d: 50, n: 6, P: 265.0, Q_single: 2.55, noise_single: 39.2, power_single: 3.10 },
+      '4x6015': { d: 60, n: 4, P: 315.0, Q_single: 3.75, noise_single: 41.0, power_single: 4.20 }
     };
 
     const state = {
       mode: '3D',
-      wingStyle: 'CRADLE', // 'FLAT', 'CRADLE', 'PERISCOPE', 'FOLDED'
-      wingLiftDeg: 85,     // 0° = aynı düzlemde yerde (ıskalar!), 85° = yukarı kalkıp laptopun 1cm yan egzozuna kapanmış!
-      fanSize: '6015',
-      fanCount: 4,
+      compactMode: false,
+      sideGapMm: 0,       // 0 mm = laptopun yanına birebir yapışık! 40 mm = kanatlar açık/uzakta
+      laptopW: 360,       // 310, 360, 395 mm
+      mainFanKey: '4x6015',
       intakeZones: 3,
       exhaustPorts: 4,
-      alignEff: 1.0,
-      Q_Ls: 6.63,
-      dP_Pa: 206,
-      recircPct: 1.2,
+      sealFactor: 1.0,    // 1.0 @ 0mm (birebir yapışık), 0.0 @ 40mm (açık)
+      Q_Ls: 6.92,
+      dP_Pa: 224,
+      recircPct: 0.8,
       T_inlet: 25.1,
-      T_exh: 41.2,
-      T_cpu: 70.5,
-      noiseDba: 47.5,
+      T_exh: 40.5,
+      T_cpu: 69.8,
+      T_cpu_open: 76.8,
+      noiseDba: 47.4,
       powerW: 19.0,
-      rotZ: -0.58,
-      rotX: 0.62,
+      rotZ: -0.55,
+      rotX: 0.60,
       lastX: 0,
       lastY: 0
     };
 
-    function updatePhysics() {
-      const f = FAN_DB[state.fanSize];
-      const n = state.fanCount;
+    function solveTempForGap(gapMm) {
+      const f = MAIN_FAN_CONFIGS[state.mainFanKey];
       const P_max = f.P;
-      const Q_max = (f.Q * n) / 1000.0;
+      const Q_max = (f.Q_single * f.n) / 1000.0;
 
-      // Yan kanatların laptopun 1cm'lik yan egzoz kotuna (Z=24..34mm) hizalanma verimi!
-      // Eğer aynı düzlemde (0°) kalırsa yan fanlar laptopun altındaki boşluğa üfler, egzozu yakalayamaz!
-      const align = state.wingStyle === 'FOLDED' ? 0.0 : Math.min(1.0, Math.pow(state.wingLiftDeg / 80.0, 1.3));
-      state.alignEff = align;
+      // Birebir yapışma katsayısı (0 mm'de %100 vakum kilidi, mesafe açıldıkça hızla düşer!)
+      const flush = Math.exp(-gapMm / 11.5);
 
       let coupling = 0.74, leak = 0.08, q_bypass = 0.0;
       if (state.intakeZones === 2) {
@@ -167,17 +167,12 @@
         coupling = 0.91; leak = 0.04; q_bypass = 8.5;
       }
 
-      let p_back = 12.0, alpha_rec = 0.065, ejecPower = 0.0, ejecNoise = 0.0;
-      if (state.exhaustPorts === 2) {
-        // Sadece hizalıysa karşı basıncı düşürür, düz düzlemdeyse (+8 Pa) ıskalar!
-        p_back = 12.0 * (1.0 - align);
-        alpha_rec = 0.065 - 0.035 * align;
-        ejecPower = 1.4; ejecNoise = 36.0;
-      } else if (state.exhaustPorts === 4) {
-        p_back = 12.0 - 24.0 * align; // Tam hizada -12 Pa vakum, 0 derecede +12 Pa!
-        alpha_rec = 0.065 - 0.053 * align;
-        ejecPower = 2.2; ejecNoise = 37.8;
-      }
+      // Yan kanatlar laptopun 1cm'lik yan egzozuna birebir yapıştığında (0 mm),
+      // yan blower'lar egzoz ağzında doğrudan vakum (Push-Pull: -28 Pa ile -42 Pa) oluşturur!
+      // Kanatlar açık bırakılırsa (+35 mm) yan vakum etkisi kaybolur (+12 Pa menteşe sıkışması kalır).
+      const maxPullPa = state.exhaustPorts === 4 ? -38.0 : -22.0;
+      const p_back = 12.0 * (1.0 - flush) + maxPullPa * flush;
+      const alpha_rec = 0.095 * (1.0 - flush) + (state.exhaustPorts === 4 ? 0.008 : 0.018) * flush;
 
       const R_laptop_int = 4.65e6;
       const R_inlet = 0.18e6 * (state.intakeZones >= 2 ? 0.18 : 0.25);
@@ -198,8 +193,8 @@
         }
       }
 
-      const flowFactor = Math.min(1.15, bestQ / 0.0050);
-      const Q_fin_load = 135.0 - q_bypass * flowFactor;
+      const flowFactor = Math.min(1.18, bestQ / 0.0050);
+      const Q_fin_load = 135.0 - q_bypass * flowFactor * (0.55 + 0.45 * flush);
 
       const dT_air = Q_fin_load / (1.18 * 1005.0 * bestQ);
       const T_inlet = 25.0 + (alpha_rec / (1.0 - alpha_rec)) * dT_air * 0.42;
@@ -208,32 +203,43 @@
       const r_conv = R_CONV_REF * Math.pow(Q_REF / bestQ, 0.62);
       const T_cpu = T_inlet + 135.0 * R_DIE_TO_FIN + Q_fin_load * r_conv;
 
-      const mainNoise = f.noise + 10.0 * Math.log10(n);
-      const totalNoise = 10.0 * Math.log10(
-        Math.pow(10.0, mainNoise / 10.0) + (ejecNoise > 0 ? Math.pow(10.0, ejecNoise / 10.0) : 0)
-      );
-      const totalPower = f.power * n + ejecPower;
+      return { bestQ, bestEffP, alpha_rec, T_inlet, T_exh, T_cpu, flush };
+    }
 
-      state.Q_Ls = bestQ * 1000.0;
-      state.dP_Pa = bestEffP;
-      state.recircPct = alpha_rec * 100.0;
-      state.T_inlet = T_inlet;
-      state.T_exh = T_exh;
-      state.T_cpu = T_cpu;
+    function updatePhysics() {
+      const f = MAIN_FAN_CONFIGS[state.mainFanKey];
+      const cur = solveTempForGap(state.sideGapMm);
+      const openRef = solveTempForGap(35.0);
+      const flushRef = solveTempForGap(0.0);
+
+      const ejecNoise = state.exhaustPorts === 4 ? 37.5 : 35.8;
+      const ejecPower = state.exhaustPorts === 4 ? 2.2 : 1.4;
+      const mainNoise = f.noise_single + 10.0 * Math.log10(f.n);
+      const totalNoise = 10.0 * Math.log10(Math.pow(10.0, mainNoise / 10.0) + Math.pow(10.0, ejecNoise / 10.0));
+      const totalPower = f.power_single * f.n + ejecPower;
+
+      state.sealFactor = cur.flush;
+      state.Q_Ls = cur.bestQ * 1000.0;
+      state.dP_Pa = cur.bestEffP;
+      state.recircPct = cur.alpha_rec * 100.0;
+      state.T_inlet = cur.T_inlet;
+      state.T_exh = cur.T_exh;
+      state.T_cpu = cur.T_cpu;
+      state.T_cpu_open = openRef.T_cpu;
       state.noiseDba = totalNoise;
       state.powerW = totalPower;
 
-      const alignEl = document.getElementById('kpiAlign');
-      const alignPct = Math.round(align * 100);
-      alignEl.textContent = alignPct < 30 ? `%${alignPct} (Iskalıyor!)` : `%${alignPct} Hizalı`;
-      alignEl.className = alignPct < 30 ? 'font-bold text-rose-400 ml-1' : 'font-bold text-emerald-400 ml-1';
-
-      document.getElementById('kpiFlow').textContent = state.Q_Ls.toFixed(2) + ' L/s';
-      document.getElementById('kpiRecirc').textContent = '%' + state.recircPct.toFixed(1);
-      document.getElementById('kpiNoisePower').textContent = `${state.noiseDba.toFixed(1)} dBA • ${state.powerW.toFixed(1)} W`;
       document.getElementById('kpiCpu').textContent = state.T_cpu.toFixed(1) + ' °C';
       const gain = 92.0 - state.T_cpu;
-      document.getElementById('kpiGain').textContent = `(-${gain.toFixed(1)}°C)`;
+      document.getElementById('kpiGain').textContent = `-${gain.toFixed(1)} °C`;
+      document.getElementById('kpiFlowNoise').textContent = `${state.Q_Ls.toFixed(2)} L/s • ${state.noiseDba.toFixed(1)} dBA`;
+
+      const extraVsOpen = openRef.T_cpu - state.T_cpu;
+      const hintR = document.getElementById('hintRight');
+      hintR.textContent = state.sideGapMm <= 2
+        ? `Birebir Yapışma Farkı: Açık Kanata Göre -${extraVsOpen.toFixed(1)} °C Daha Soğuk!`
+        : `Kanatları Kapatırsan -${(state.T_cpu - flushRef.T_cpu).toFixed(1)} °C Daha Düşecek!`;
+      hintR.className = state.sideGapMm <= 2 ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold';
     }
 
     function mmToPx(xMm, zMm) {
@@ -246,19 +252,13 @@
     }
 
     function spawnParticle2D(p) {
-      const zBot = 17.0;
       p.age = 0;
-      p.maxAge = 130 + Math.random() * 90;
+      p.maxAge = 125 + Math.random() * 85;
       const r = Math.random();
-      if (r < 0.48) {
+      if (r < 0.52) {
         p.x = 185 + Math.random() * 90; p.z = 2 + Math.random() * 12; p.temp = 25.0;
-      } else if (r < 0.80) {
-        // Laptopun 1 cm'lik yan egzoz açıklığı: Z = 22..32 mm!
-        p.x = 180 + Math.random() * 3; p.z = 22.0 + Math.random() * 10.0; p.temp = state.T_exh;
       } else {
-        // Yan kanat nozul çıkışı: Kanat kalkıksa Z=26mm'de (tam egzoz hizasında), düzse Z=10mm'de (yerde)!
-        const zNoz = 10.0 + 16.5 * state.alignEff;
-        p.x = 182 + Math.random() * 4; p.z = zNoz + (Math.random() - 0.5) * 4.0; p.temp = 25.0;
+        p.x = 175 + Math.random() * 5; p.z = 22.0 + Math.random() * 10.0; p.temp = state.T_exh;
       }
     }
 
@@ -267,68 +267,62 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const zBot = 17.0, zTop = 41.0;
+      const lapHalf = state.laptopW / 2.0; // 155, 180 veya 197.5 mm
+      const wingX = lapHalf + state.sideGapMm; // Sağa-sola kayan L-kanat konumu!
+
       const [m0x, m0y] = mmToPx(0, 0);
       const [m1x, m1y] = mmToPx(320, 0);
       ctx.fillStyle = '#1e293b';
       ctx.fillRect(m0x, m0y, m1x - m0x, 20);
 
-      // Alt Gövde (Z = 3..17 mm, X = 0..172 mm)
+      // Alt Ana Gövde + Sağa-Sola Açılan Teleskopik Taban
       const [b0x, b0y] = mmToPx(0, 17);
-      const [b1x, b1y] = mmToPx(172, 3);
-      ctx.fillStyle = 'rgba(51, 65, 85, 0.75)';
+      const [b1x, b1y] = mmToPx(wingX + 26, 3);
+      ctx.fillStyle = 'rgba(51, 65, 85, 0.78)';
       ctx.strokeStyle = '#94a3b8';
       ctx.lineWidth = 1.5;
       ctx.fillRect(b0x, b0y, b1x - b0x, b1y - b0y);
       ctx.strokeRect(b0x, b0y, b1x - b0x, b1y - b0y);
 
-      // YAN KANAT / KULE (Menteşe X=174, Z=10mm'den yukarı doğru döner!)
-      const zNoz = 10.0 + 16.5 * state.alignEff; // 0° iken Z=10mm (laptopun altında!), 85° iken Z=26.5mm (tam 1cm yan egzoz karşısında!)
-      const [hx, hy] = mmToPx(174, 10);
-      const [wx, wy] = mmToPx(194 - 10 * state.alignEff, zNoz + 5);
-      ctx.strokeStyle = state.alignEff > 0.6 ? '#10b981' : '#f43f5e';
-      ctx.lineWidth = 8;
-      ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(wx, wy); ctx.stroke();
-      ctx.lineCap = 'butt';
+      // SAĞA-SOLA KAYIP LAPTOPUN YANINA YAPIŞAN L-KANAT DUVARI (Z = 3..37 mm)
+      const [w0x, w0y] = mmToPx(wingX, 37);
+      const [w1x, w1y] = mmToPx(wingX + 26, 3);
+      const isFlush = state.sideGapMm <= 2;
+      ctx.fillStyle = isFlush ? 'rgba(16, 185, 129, 0.45)' : 'rgba(244, 63, 94, 0.35)';
+      ctx.strokeStyle = isFlush ? '#10b981' : '#f43f5e';
+      ctx.lineWidth = 2;
+      ctx.fillRect(w0x, w0y, w1x - w0x, w1y - w0y);
+      ctx.strokeRect(w0x, w0y, w1x - w0x, w1y - w0y);
 
-      ctx.fillStyle = state.alignEff > 0.6 ? '#6ee7b7' : '#fda4af';
+      // Yan L-Kanadın İçindeki 1 cm'lik Vakum/Ejektör Kanalı (Z = 22..32 mm)
+      const [ch0x, ch0y] = mmToPx(wingX, 32);
+      const [ch1x, ch1y] = mmToPx(wingX + 26, 22);
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.75)';
+      ctx.fillRect(ch0x, ch0y, ch1x - ch0x, ch1y - ch0y);
+
+      ctx.fillStyle = isFlush ? '#6ee7b7' : '#fda4af';
       ctx.font = 'bold 12px sans-serif';
       ctx.fillText(
-        state.alignEff > 0.6
-          ? `✅ Yan Kanat Yukarı Kalkık (Z=${zNoz.toFixed(0)}mm → 1cm Yan Egzozla Aynı Hizada!)`
-          : `❌ Yan Kanat Düz Düzlemde (Z=10mm → Laptopun Yan Egzozunu Iskalıyor!)`,
-        wx + 12, wy
+        isFlush
+          ? `✅ L-Kanat Laptopa Birebir Yapışık (0mm) → T_CPU: ${state.T_cpu.toFixed(1)}°C (-${(92 - state.T_cpu).toFixed(1)}°C)`
+          : `⚠️ L-Kanat ${state.sideGapMm}mm Açık → Hava Kaçıyor! T_CPU: ${state.T_cpu.toFixed(1)}°C (-${(92 - state.T_cpu).toFixed(1)}°C)`,
+        w0x - 85, w0y - 8
       );
 
-      // Partiküller
       for (const p of particles2D) {
         let u = 0, w = 0;
-        if (p.z < zBot && p.x <= 185) {
-          u = -2.2;
-          if (p.x < 95) w = 1.6;
-        } else if (p.x <= 180 && p.z >= zBot && p.z <= zTop) {
-          u = 2.6; w = 0;
-        } else if (p.x > 178) {
-          const dx = Math.max(1, p.x - 180);
-          // Laptopun 1cm yan egzozu (Z=22..32mm)
-          if (p.z >= 19 && p.z <= 36) {
-            u += 2.2 * Math.exp(-dx / 150);
-            if (state.alignEff < 0.4) {
-              // Yan kanat aşağıdaysa sıcak egzoz aşağı kıvrılıp geri emilir!
-              w -= 0.9 * Math.exp(-dx / 65);
-            } else {
-              // Yan kanat yukarı kalkıp tam karşısına geldiyse hızla uzağa fırlatılır!
-              u += 3.8 * Math.exp(-dx / 220);
-              w += 0.8;
-            }
-          }
-          // Yan kanat kendi jeti (zNoz hizasında)
-          if (Math.abs(p.z - zNoz) < 7) {
-            u += 4.5 * Math.exp(-dx / 190);
-          }
-          // Geri-dönüş girdabı (düz düzlemde çok güçlü!)
-          if (state.alignEff < 0.5 && p.x < 225 && p.z < 26) {
-            u -= 2.1; w -= 0.6;
+        if (p.z < zBot && p.x <= lapHalf) {
+          u = -2.4;
+          if (p.x < 95) w = 1.7;
+        } else if (p.x <= lapHalf && p.z >= zBot && p.z <= zTop) {
+          u = 2.8; w = 0;
+        } else if (p.x > lapHalf - 2) {
+          if (state.sideGapMm > 6 && p.x < wingX) {
+            // Kanat ile laptop arasında boşluk varsa sıcak hava aradan aşağı kaçıp geri emilir!
+            u = 1.1; w = -1.6;
+          } else {
+            // Birebir yapışıksa doğrudan yan L-kanadın 1cm tünelinden hızla dışarı fırlatılır!
+            u = 4.8; w = 0.6;
           }
         }
 
@@ -336,32 +330,32 @@
         p.x += u * 0.85; p.z += w * 0.85; p.age += 1;
         const [x1, y1] = mmToPx(p.x, p.z);
 
-        ctx.strokeStyle = p.temp > 32 ? 'rgba(251, 113, 133, 0.88)' : 'rgba(56, 189, 248, 0.85)';
-        ctx.lineWidth = 2.1;
+        ctx.strokeStyle = p.temp > 32 ? 'rgba(251, 113, 133, 0.9)' : 'rgba(56, 189, 248, 0.85)';
+        ctx.lineWidth = 2.2;
         ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
 
         if (p.age > p.maxAge || p.x < 2 || p.x > 316 || p.z < 1 || p.z > 92) spawnParticle2D(p);
       }
 
-      // Laptop Gövdesi (Z = 17..41 mm)
+      // Laptop Gövdesi (0 .. lapHalf)
       const [l0x, l0y] = mmToPx(0, zTop);
-      const [l1x, l1y] = mmToPx(180, zBot);
-      ctx.fillStyle = 'rgba(30, 41, 59, 0.88)';
+      const [l1x, l1y] = mmToPx(lapHalf, zBot);
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.90)';
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 2;
       ctx.fillRect(l0x, l0y, l1x - l0x, l1y - l0y);
       ctx.strokeRect(l0x, l0y, l1x - l0x, l1y - l0y);
 
-      // Laptopun 1 cm'lik (10 mm) Yan Egzoz Açıklığı (Z = 22..32 mm)
-      const [eg0x, eg0y] = mmToPx(180, 32);
-      const [eg1x, eg1y] = mmToPx(180, 22);
+      // Laptopun 1 cm'lik Yan Egzoz Açıklığı
+      const [eg0x, eg0y] = mmToPx(lapHalf, 32);
+      const [eg1x, eg1y] = mmToPx(lapHalf, 22);
       ctx.strokeStyle = '#fb7185';
       ctx.lineWidth = 5;
       ctx.beginPath(); ctx.moveTo(eg0x, eg0y); ctx.lineTo(eg1x, eg1y); ctx.stroke();
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 12px sans-serif';
-      ctx.fillText(`LAPTOP GÖVDESİ (Z=17..41mm)  •  Yan Egzoz Açıklığı: 10 mm (Z=22..32mm)`, l0x + 12, (l0y + l1y) / 2 + 4);
+      ctx.fillText(`LAPTOP (${state.laptopW}mm) • T_CPU: ${state.T_cpu.toFixed(1)} °C (-${(92 - state.T_cpu).toFixed(1)} °C)`, l0x + 10, (l0y + l1y) / 2 + 4);
     }
 
     const particles3D = [];
@@ -376,27 +370,8 @@
       const cx = Math.cos(state.rotX), sx = Math.sin(state.rotX);
       const y2 = y1 * cx - z * sx;
       const z2 = y1 * sx + z * cx;
-      const scale = 1.38;
+      const scale = 1.32;
       return [canvas.width / 2 + x1 * scale, canvas.height / 2 + 28 - z2 * scale, y2];
-    }
-
-    function drawPolygon3D(pts3D, strokeCol, fillCol, lw = 1.2) {
-      const pts = pts3D.map(p => project3D(p[0], p[1], p[2]));
-      if (fillCol) {
-        ctx.fillStyle = fillCol;
-        ctx.beginPath();
-        pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); });
-        ctx.closePath();
-        ctx.fill();
-      }
-      if (strokeCol) {
-        ctx.strokeStyle = strokeCol;
-        ctx.lineWidth = lw;
-        ctx.beginPath();
-        pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); });
-        ctx.closePath();
-        ctx.stroke();
-      }
     }
 
     function drawBox3D(x0, y0, z0, w, d, h, strokeCol, fillCol) {
@@ -430,22 +405,26 @@
       const padH = 14.0;
       const zLapBot = zPad + padH + 3.0; // Z = 21 mm
       const lapH = 22.0;                 // Laptop Z = 21..43 mm
+      const lapHalf = state.compactMode ? 125.0 : (state.laptopW / 2.0);
+      const wingInnerX = state.compactMode ? 125.0 : (lapHalf + state.sideGapMm);
+      const isFlush = !state.compactMode && state.sideGapMm <= 2;
 
-      // 1. Alt Orta Kutu (Laptopun ALTINDAKİ Düzlem: Z = 4..18 mm)
-      drawBox3D(-125, -120, zPad, 250, 240, padH, '#64748b', 'rgba(30, 41, 59, 0.75)');
+      // 1. Alt Orta Gövde (250 mm sabit merkez + sağa-sola açılan kızaklar)
+      drawBox3D(-125, -120, zPad, 250, 240, padH, '#64748b', 'rgba(30, 41, 59, 0.78)');
 
-      // 3 Bölmeli Giriş Manifoldu Contaları (Z = 18..21 mm)
+      // 3 Bölmeli Alt EPDM Conta (Laptopun altına birebir yapışan kısım)
       drawBox3D(-110, -45, zPad + padH, 76, 140, 3, '#22c55e', 'rgba(34, 197, 94, 0.28)');
       if (state.intakeZones === 3) {
         drawBox3D(-26, -35, zPad + padH, 52, 125, 3, '#38bdf8', 'rgba(56, 189, 248, 0.32)');
       }
       drawBox3D(34, -45, zPad + padH, 76, 140, 3, '#22c55e', 'rgba(34, 197, 94, 0.28)');
 
-      // Alt Düzlemdeki Ana Radyal Blower'lar (Z = 6..17 mm)
-      const rFan = FAN_DB[state.fanSize].d / 2.0;
-      const blowers = state.fanCount === 2 ? [[-70, 20], [70, 20]]
-                    : state.fanCount === 4 ? [[-72, -30], [-52, 70], [72, -30], [52, 70]]
-                    : [[-78, -40], [-72, 65], [0, -45], [0, 65], [78, -40], [72, 65]];
+      // Alt Ana Radyal Blower'lar
+      const f = MAIN_FAN_CONFIGS[state.mainFanKey];
+      const rFan = f.d / 2.0;
+      const blowers = f.n === 4 ? [[-72, -30], [-52, 70], [72, -30], [52, 70]]
+                    : f.n === 6 ? [[-78, -40], [-72, 65], [0, -45], [0, 65], [78, -40], [72, 65]]
+                    : [[-82, -50], [-82, 15], [-52, 80], [-18, -35], [18, -35], [52, 80], [82, 15], [82, -50]];
       for (const [bx, by] of blowers) {
         ctx.strokeStyle = '#c084fc';
         ctx.lineWidth = 1.6;
@@ -458,73 +437,50 @@
         ctx.stroke();
       }
 
-      // 2. YARI-ŞEFFAF LAPTOP GÖVDESİ (Üst Düzlem: Z = 21..43 mm, Genişlik X = -165..+165 mm)
-      if (state.wingStyle !== 'FOLDED') {
-        drawBox3D(-165, -115, zLapBot, 330, 230, lapH, 'rgba(226, 232, 240, 0.55)', 'rgba(15, 23, 42, 0.38)');
-
-        // LAPTOPUN YAN DUVARINDAKİ 1 CM'LİK (10 mm) KIRMIZI EGZOZ IZGARALARI (X = ±165 mm, Y = 15..75 mm, Z = 26..36 mm)
-        for (const sx of [-1, 1]) {
-          const xVent = sx * 165;
-          drawPolygon3D(
-            [[xVent, 15, 26], [xVent, 75, 26], [xVent, 75, 36], [xVent, 15, 36]],
-            '#fb7185', 'rgba(244, 63, 94, 0.85)', 2.0
-          );
-        }
-      }
-
-      // 3. YUKARI KALKAN / LAPTOP YANINA KAPANAN YAN KANATLAR VE 4010 EJEKTÖR MODÜLLERİ
-      // Menteşe ekseni X = ±168 mm (veya katlıyken ±125 mm)
-      const rad = (state.wingLiftDeg * Math.PI) / 180.0;
-      const wingW = 48.0;
+      // 2. SAĞA VE SOLA AÇILIP KAPANAN, LAPTOPA YANDAN BİREBİR YAPIŞAN L-KANATLAR!
       for (const sx of [-1, 1]) {
-        if (state.wingStyle === 'FOLDED') {
-          // Çanta modu: kanatlar orta gövdenin üstüne içe katlanmış
-          drawBox3D(sx > 0 ? 5 : -120, -115, zPad + padH + 2, 115, 230, 12, '#f59e0b', 'rgba(245, 158, 11, 0.35)');
-          continue;
+        const xIn = sx > 0 ? wingInnerX : -(wingInnerX + 28);
+        const wCol = isFlush ? '#10b981' : (state.compactMode ? '#38bdf8' : '#f43f5e');
+        const wFill = isFlush ? 'rgba(16, 185, 129, 0.38)' : (state.compactMode ? 'rgba(56, 189, 248, 0.28)' : 'rgba(244, 63, 94, 0.28)');
+
+        // Alt Kızak Kolları (Orta gövdeden sağa/sola uzanan taban)
+        const slideX0 = sx > 0 ? 125 : -wingInnerX;
+        const slideW = Math.max(2, wingInnerX - 125);
+        drawBox3D(slideX0, -110, zPad + 2, slideW, 220, padH - 2, '#475569', 'rgba(30, 41, 59, 0.55)');
+
+        // Dikey L-Duvarı (Laptopun yan duvarı yüksekliğine Z=4..40mm kadar çıkan ve yan egzoza birebir yapışan kalkan!)
+        drawBox3D(xIn, -115, zPad, 28, 230, 36, wCol, wFill);
+
+        // Yan L-Duvarın İçindeki 1 cm'lik (10 mm) Aktif Vakum/Ejektör Modülü (Y = 15..75 mm, Z = 26..36 mm)
+        const ejX = sx > 0 ? wingInnerX + 1 : -(wingInnerX + 25);
+        drawBox3D(ejX, 15, 26, 24, 60, 10, '#f59e0b', 'rgba(245, 158, 11, 0.82)');
+
+        // 4 Kanallı Modda Arka-Köşe Menteşe Yanı Vakum Portları
+        if (state.exhaustPorts === 4) {
+          drawBox3D(ejX, 85, 26, 24, 28, 10, '#fb7185', 'rgba(251, 113, 133, 0.78)');
         }
-
-        const hx = sx * 168; // Laptopun yan kenarının hemen dışı
-        const hz = zPad + 8;
-        const tipX = hx + sx * Math.cos(rad) * wingW;
-        const tipZ = hz + Math.sin(rad) * wingW;
-
-        // Yan Kanat Plakası (Menteşeden yukarı doğru açı yapan 3B kanat)
-        drawPolygon3D(
-          [[hx, -95, hz], [tipX, -95, tipZ], [tipX, 105, tipZ], [hx, 105, hz]],
-          state.alignEff > 0.6 ? '#10b981' : '#f43f5e',
-          state.alignEff > 0.6 ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.28)',
-          2.0
-        );
-
-        // Yan Kanat Üzerindeki 1 cm'lik (10 mm) 4010 Blower + Yassı Ejektör Nozulu (Y = 15..75 mm)
-        const nozX0 = hx + sx * Math.cos(rad) * 18;
-        const nozZ0 = hz + Math.sin(rad) * 18;
-        const nozX1 = hx + sx * Math.cos(rad) * 42;
-        const nozZ1 = hz + Math.sin(rad) * 42;
-        drawPolygon3D(
-          [[nozX0, 15, nozZ0], [nozX1, 15, nozZ1], [nozX1, 75, nozZ1], [nozX0, 75, nozZ0]],
-          '#f59e0b', 'rgba(245, 158, 11, 0.78)', 2.2
-        );
       }
 
-      // 4. 3B Akış Partikülleri (Alttan Giren Mavi Hava + 1cm Yan Egzozdan Çıkan Kırmızı/Sarı Hava)
-      if (state.wingStyle !== 'FOLDED') {
+      // 3. YARI-ŞEFFAF LAPTOP GÖVDESİ (Sağ-Sol L-Kanatların Arasına Oturur!)
+      if (!state.compactMode) {
+        drawBox3D(-lapHalf, -115, zLapBot, state.laptopW, 230, lapH, 'rgba(226, 232, 240, 0.65)', 'rgba(15, 23, 42, 0.40)');
+
+        // Partiküller
         for (const p of particles3D) {
-          p.phase += 0.022;
+          p.phase += 0.024;
           if (p.phase > 1) p.phase -= 1;
           const k = p.phase;
           let x, y, z, col;
-          if ( p.type === 'intake') {
-            x = p.side * (35 + (p.idx % 45));
-            y = -80 + (p.idx % 90);
+          if (p.type === 'intake') {
+            x = p.side * (30 + (p.idx % 55));
+            y = -80 + (p.idx % 95);
             z = 4 + k * 24;
             col = '#38bdf8';
           } else {
-            // Yan 1cm egzozdan (X = ±165, Z = 31mm) çıkan sıcak hava + yan kanat jeti
-            x = p.side * (166 + k * 90);
-            y = 25 + (p.idx % 45);
-            z = state.alignEff > 0.5 ? (31 + k * 28) : (31 - k * 22); // Hizalıysa yukarı-uzağa, düzse aşağı geri döner!
-            col = state.alignEff > 0.5 ? '#fde047' : '#fb7185';
+            x = p.side * (lapHalf + k * 85);
+            y = 25 + (p.idx % 50);
+            z = isFlush ? (31 + k * 22) : (31 - k * 18);
+            col = isFlush ? '#fde047' : '#fb7185';
           }
           const [px, py] = project3D(x, y, z);
           ctx.fillStyle = col;
@@ -552,44 +508,57 @@
       }
     });
 
-    const slWingLift = document.getElementById('slWingLift');
-    const selFanSize = document.getElementById('selFanSize');
-    const selFanCount = document.getElementById('selFanCount');
+    const slGapSide = document.getElementById('slGapSide');
+    const selLaptopSize = document.getElementById('selLaptopSize');
+    const selMainFans = document.getElementById('selMainFans');
     const selIntakeZones = document.getElementById('selIntakeZones');
     const selExhaustPorts = document.getElementById('selExhaustPorts');
 
     function syncControls() {
-      state.wingLiftDeg = parseFloat(slWingLift.value);
-      state.fanSize = selFanSize.value;
-      state.fanCount = parseInt(selFanCount.value, 10);
+      state.sideGapMm = parseFloat(slGapSide.value);
+      state.laptopW = parseFloat(selLaptopSize.value);
+      state.mainFanKey = selMainFans.value;
       state.intakeZones = parseInt(selIntakeZones.value, 10);
       state.exhaustPorts = parseInt(selExhaustPorts.value, 10);
-      document.getElementById('valWingLift').textContent =
-        state.wingStyle === 'FOLDED' ? 'Katlı (Çanta)' : `${state.wingLiftDeg.toFixed(0)}° (${state.wingLiftDeg >= 55 ? 'Hizalı' : 'Alçak'})`;
+
+      const gapEl = document.getElementById('valGapSide');
+      if (state.compactMode) {
+        gapEl.textContent = 'Tam Kapalı (Çanta)';
+        gapEl.className = 'font-bold text-sky-400';
+      } else if (state.sideGapMm <= 2) {
+        gapEl.textContent = `${state.sideGapMm} mm (Yapışık!)`;
+        gapEl.className = 'font-bold text-emerald-400';
+      } else {
+        gapEl.textContent = `${state.sideGapMm} mm Açık`;
+        gapEl.className = 'font-bold text-rose-400';
+      }
       updatePhysics();
     }
 
-    [slWingLift, selFanSize, selFanCount, selIntakeZones, selExhaustPorts].forEach(el => {
+    [slGapSide, selLaptopSize, selMainFans, selIntakeZones, selExhaustPorts].forEach(el => {
       el.addEventListener('input', () => {
-        if (state.wingStyle === 'FOLDED') state.wingStyle = 'CRADLE';
+        state.compactMode = false;
         syncControls();
       });
-      el.addEventListener('change', syncControls);
+      el.addEventListener('change', () => {
+        state.compactMode = false;
+        syncControls();
+      });
     });
 
-    document.querySelectorAll('.wing-btn').forEach(btn => {
+    document.querySelectorAll('.preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const w = btn.dataset.wing;
-        state.wingStyle = w;
-        if (w === 'FLAT') slWingLift.value = 0;
-        else if (w === 'CRADLE') slWingLift.value = 85;
-        else if (w === 'PERISCOPE') slWingLift.value = 75;
-        else if (w === 'FOLDED') slWingLift.value = 0;
+        const p = btn.dataset.preset;
+        state.compactMode = (p === 'COMPACT');
+        if (p === 'OPEN') slGapSide.value = 35;
+        else if (p === 'HALF') slGapSide.value = 10;
+        else if (p === 'FLUSH') slGapSide.value = 0;
+        else if (p === 'COMPACT') slGapSide.value = 0;
 
-        document.querySelectorAll('.wing-btn').forEach(b => {
-          b.className = 'wing-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400';
+        document.querySelectorAll('.preset-btn').forEach(b => {
+          b.className = 'preset-btn px-2 py-1 rounded border border-[var(--border)] hover:border-cyan-400';
         });
-        btn.className = 'wing-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium';
+        btn.className = 'preset-btn px-2 py-1 rounded border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-medium';
         syncControls();
       });
     });
